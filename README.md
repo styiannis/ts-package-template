@@ -95,21 +95,17 @@ npm install
 ### Customize Template
 
 - **Update `package.json`**:
-
   - Update `name`, `version`, `description`, `keywords`, `author`, and `license` fields to reflect your project details.
   - Update the `repository` and `bugs` fields to point to your project's repository and issue tracker.
   - Ensure the `exports` section aligns with your package structure.
 
 - **Update Source Files**:
-
   - Modify the files in `./src` directory and customize `index.ts` to export your project's main functionalities.
 
 - **Update Test Files**:
-
   - Modify the tests in `./tests` directory to verify the functionality of your project's source files.
 
 - **Update Documentation**:
-
   - Revise the `README.md` document to accurately reflect your project.
 
 ## Configuration Files
