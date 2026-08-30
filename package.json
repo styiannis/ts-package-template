@@ -1,13 +1,17 @@
 {
   "name": "tmplt-ts-package",
   "version": "1.1.8",
-  "description": "A TypeScript package template delivering dual-format builds (CommonJS/ESM), comprehensive type declarations, and maintained source hierarchy for modular package development",
+  "description": "A TypeScript package template where any source module can be its own entry point, so consumers import one submodule instead of your whole barrel",
   "keywords": [
     "typescript",
+    "template",
     "package-template",
     "modular",
     "commonjs",
-    "esm"
+    "esm",
+    "rollup",
+    "subpath-exports",
+    "tree-shaking"
   ],
   "author": "Yiannis Stergiou <hello@styiannis.dev>",
   "license": "MIT",
