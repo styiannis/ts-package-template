@@ -5,15 +5,59 @@ import typescript from '@rollup/plugin-typescript';
 import fs from 'node:fs';
 import { dts } from 'rollup-plugin-dts';
 
+/* ========================================================================== */
+/* Setup                                                                      */
+/* ========================================================================== */
+
 const pkg = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
 
-function output(preserveModulesRoot, dir, format) {
-  return { dir, format, preserveModulesRoot, preserveModules: true };
+// Minimal `.env` reader for `BUILD_FORMATS`. Existing env values are kept, so
+// an inline `BUILD_FORMATS=... npm run build` overrides the file.
+function loadEnvFile(path = '.env') {
+  if (!fs.existsSync(path)) {
+    return;
+  }
+
+  const lines = fs.readFileSync(path, 'utf8').split('\n');
+
+  for (const line of lines) {
+    const match = /^\s*([\w.-]+)\s*=\s*(.*)?\s*$/.exec(line);
+
+    if (!match) {
+      continue;
+    }
+
+    const key = match[1];
+    const value = match[2] || '';
+
+    if (process.env[key] === undefined) {
+      process.env[key] = value.trim();
+    }
+  }
+}
+
+loadEnvFile();
+
+/* ========================================================================== */
+/* Plugin helpers                                                             */
+/* ========================================================================== */
+
+function emitPackageType(type) {
+  return {
+    name: 'emit-package-type',
+    generateBundle() {
+      this.emitFile({
+        type: 'asset',
+        fileName: 'package.json',
+        source: `${JSON.stringify({ type }, null, 2)}\n`,
+      });
+    },
+  };
 }
 
 function external() {
   const externalModules = (externals) =>
-    0 === externals.length
+    externals.length === 0
       ? () => false
       : (id) => new RegExp(`^(${externals.join('|')})($|/)`).test(id);
 
@@ -24,6 +68,14 @@ function external() {
   ]);
 }
 
+function output(preserveModulesRoot, dir, format) {
+  return { dir, format, preserveModulesRoot, preserveModules: true };
+}
+
+/* ========================================================================== */
+/* Format builders                                                            */
+/* ========================================================================== */
+
 function CJS(input, srcDir, distDir, useExternal) {
   const format = 'cjs';
   const outDir = `${distDir}/${format}`;
@@ -31,7 +83,11 @@ function CJS(input, srcDir, distDir, useExternal) {
   return {
     input,
     output: output(srcDir, outDir, format),
-    plugins: [resolve(), typescript({ compilerOptions: { outDir } })],
+    plugins: [
+      ...(useExternal ? [] : [resolve()]),
+      typescript({ compilerOptions: { outDir } }),
+      emitPackageType('commonjs'),
+    ],
     external: useExternal ? external() : undefined,
   };
 }
@@ -43,7 +99,11 @@ function ES(input, srcDir, distDir, useExternal) {
   return {
     input,
     output: output(srcDir, outDir, format),
-    plugins: [resolve(), typescript({ compilerOptions: { outDir } })],
+    plugins: [
+      ...(useExternal ? [] : [resolve()]),
+      typescript({ compilerOptions: { outDir } }),
+      emitPackageType('module'),
+    ],
     external: useExternal ? external() : undefined,
   };
 }
@@ -55,17 +115,49 @@ function Types(input, srcDir, distDir, useExternal) {
   return {
     input,
     output: output(srcDir, outDir, format),
-    plugins: [resolve(), typescript({ compilerOptions: { outDir } }), dts()],
+    plugins: [
+      ...(useExternal ? [] : [resolve()]),
+      typescript({ compilerOptions: { outDir } }),
+      dts(),
+    ],
     external: useExternal ? external() : undefined,
   };
 }
+
+/* ========================================================================== */
+/* Format resolution                                                          */
+/* ========================================================================== */
+
+const BUILDERS = { cjs: CJS, es: ES, types: Types };
+const ALL_FORMATS = Object.keys(BUILDERS);
+
+const formats = (process.env.BUILD_FORMATS ?? ALL_FORMATS.join(','))
+  .split(',')
+  .map((s) => s.trim().toLowerCase())
+  .filter(Boolean);
+
+const unknownFormats = formats.filter((f) => !ALL_FORMATS.includes(f));
+
+if (unknownFormats.length > 0) {
+  throw new Error(
+    `BUILD_FORMATS: unknown format(s) "${unknownFormats.join(', ')}". Valid: ${ALL_FORMATS.join(', ')}.`
+  );
+}
+
+if (formats.length === 0) {
+  throw new Error(
+    `BUILD_FORMATS: at least one of "${ALL_FORMATS.join(', ')}" is required.`
+  );
+}
+
+/* ========================================================================== */
+/* Entry & export                                                             */
+/* ========================================================================== */
 
 const srcDir = 'src';
 const distDir = 'dist';
 const inputFile = `${srcDir}/index.ts`;
 
-export default [
-  CJS(inputFile, srcDir, distDir, true),
-  ES(inputFile, srcDir, distDir, true),
-  Types(inputFile, srcDir, distDir, true),
-];
+export default formats.map((f) =>
+  BUILDERS[f](inputFile, srcDir, distDir, true)
+);
