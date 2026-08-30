@@ -51,7 +51,7 @@ Node ≥ `22.12.0` is recommended for development (declared in `devEngines`, war
 Either click the "_Use this template_" button at the top of the repository and clone the result, or clone this repository directly:
 
 ```sh
-git clone https://github.com/styiannis/tmplt-ts-package my-package
+git clone https://github.com/styiannis/ts-package-template my-package
 cd my-package
 npm install
 npm run verify
@@ -212,8 +212,8 @@ A scoped name (`@you/my-package`) publishes privately by default and fails witho
 
 ## Issues and Support
 
-If you encounter any issues or have questions, please open an issue on the [GitHub Issue Tracker](https://github.com/styiannis/tmplt-ts-package/issues).
+If you encounter any issues or have questions, please open an issue on the [GitHub Issue Tracker](https://github.com/styiannis/ts-package-template/issues).
 
 ## License
 
-This project is licensed under the [MIT License](https://github.com/styiannis/tmplt-ts-package?tab=MIT-1-ov-file#readme).
+This project is licensed under the [MIT License](https://github.com/styiannis/ts-package-template?tab=MIT-1-ov-file#readme).

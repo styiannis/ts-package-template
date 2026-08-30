@@ -1,5 +1,5 @@
 {
-  "name": "tmplt-ts-package",
+  "name": "ts-package-template",
   "version": "1.2.0",
   "description": "A TypeScript package template where any source module can be its own entry point, so consumers import one submodule instead of your whole barrel",
   "keywords": [
@@ -17,10 +17,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/styiannis/tmplt-ts-package.git"
+    "url": "https://github.com/styiannis/ts-package-template.git"
   },
   "bugs": {
-    "url": "https://github.com/styiannis/tmplt-ts-package/issues"
+    "url": "https://github.com/styiannis/ts-package-template/issues"
   },
   "source": "src/index.ts",
   "main": "dist/cjs/index.js",
