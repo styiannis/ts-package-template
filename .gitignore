@@ -55,12 +55,12 @@ pnpm-lock.yaml
 .vscode
 
 ############################
-# Folders
+# Build output
 ############################
-build
-code_documentation
-coverage_report
-dist
+/build
+/code_documentation
+/coverage_report
+/dist
 
 ############################
 # Exclude folders
