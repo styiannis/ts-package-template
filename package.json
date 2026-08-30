@@ -42,7 +42,6 @@
     "dev": "node ./scripts/clean.js ./dist && rollup -c --watch",
     "check-types": "tsc --noEmit",
     "check-updates": "npx npm-check-updates@^23",
-    "ci": "npm run check-types && npm run lint && npm run build && npm run validate-exports",
     "clear": "node ./scripts/clean.js ./build ./code_documentation ./coverage_report ./dist",
     "docs": "node ./scripts/clean.js ./code_documentation && npx typedoc@^0.28 --basePath ./ --entryPoints src/index.ts --entryPointStrategy Expand --readme none --includeVersion --out code_documentation",
     "format": "prettier -w ./",
@@ -54,7 +53,8 @@
     "test-coverage": "node ./scripts/clean.js ./coverage_report && jest --coverage --coverageDirectory=coverage_report",
     "test-coverage-watch": "npm run test-coverage -- --watchAll",
     "test-watch": "jest --watchAll",
-    "validate-exports": "node ./scripts/validate-exports.js"
+    "validate-exports": "node ./scripts/validate-exports.js",
+    "verify": "npm run check-types && npm run lint && npm run build && npm run validate-exports"
   },
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^16.0.3",
