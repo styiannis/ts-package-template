@@ -30,6 +30,8 @@ jobs:
         run: npm install
 
       - name: Verify (type checks, linting, build, exports validation)
+        # Builds all three formats by default. If you pinned BUILD_FORMATS
+        # for the package, set it here too (see README) or CI drifts from it.
         run: npm run verify
 
       - name: Test script with coverage reporting
@@ -50,6 +52,3 @@ jobs:
 
       - name: Load built output (Node 24)
         run: node ./.github/scripts/load-built-output.js
-
-      - name: Environment reset
-        run: npm run reset-hard

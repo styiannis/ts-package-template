@@ -11,33 +11,6 @@ import { dts } from 'rollup-plugin-dts';
 
 const pkg = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
 
-// Minimal `.env` reader for `BUILD_FORMATS`. Existing env values are kept, so
-// an inline `BUILD_FORMATS=... npm run build` overrides the file.
-function loadEnvFile(path = '.env') {
-  if (!fs.existsSync(path)) {
-    return;
-  }
-
-  const lines = fs.readFileSync(path, 'utf8').split('\n');
-
-  for (const line of lines) {
-    const match = /^\s*([\w.-]+)\s*=\s*(.*)?\s*$/.exec(line);
-
-    if (!match) {
-      continue;
-    }
-
-    const key = match[1];
-    const value = match[2] || '';
-
-    if (process.env[key] === undefined) {
-      process.env[key] = value.trim();
-    }
-  }
-}
-
-loadEnvFile();
-
 /* ========================================================================== */
 /* Build helpers                                                              */
 /* ========================================================================== */

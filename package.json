@@ -6,7 +6,6 @@
     "typescript",
     "template",
     "package-template",
-    "modular",
     "commonjs",
     "esm",
     "rollup",

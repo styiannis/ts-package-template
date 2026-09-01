@@ -37,6 +37,12 @@ Declared entry points are **checked, not assumed**: `npm run verify` builds, the
 
 Mixed `.ts`/`.js` sources build, type-check and test side by side, so a JavaScript package can migrate incrementally.
 
+## What It Does Not Do
+
+Plumbing, not policy: no git hooks, no commit-message rules, no CI that blocks a push. The linter and formatter ship with defaults, not opinions you are expected to keep. A fresh clone needs Node and npm and nothing else — the peripheral tools run on demand rather than taking a dependency slot.
+
+What it does enforce is narrow and mechanical: every entry point your package declares has to exist in the build, in the right module format. That check and the workflow around it are described below — few, but they hold. The cost is honest: no safety net, and nothing runs unless you run it.
+
 ## System Requirements
 
 | Package     | Version     |
@@ -61,13 +67,15 @@ A green `verify` means it type-checks, lints, builds, and every declared entry p
 
 ### First Steps After Using the Template
 
-Everything under `src/` and `tests/` is placeholder demo code. To make the template yours:
+Everything under `src/` and `tests/` is placeholder demo code, named `module-a`/`module-b` rather than the illustrative `shapes/` of the diagram above. To make the template yours:
 
 1. **Delete the demo code** — `src/module-a/`, `src/module-b/` and the three files in `tests/`. Write your own modules and re-export them from `src/index.ts`.
 2. **Replace the `exports` map** — the 8 demo entries in `package.json` describe the demo modules. See [Adding a public module](#adding-a-public-module).
 3. **Update the metadata** — `name`, `version`, `description`, `keywords`, `author`, `license`, plus `repository` and `bugs` so they point at your own repository and issue tracker. Replace the copyright line in `LICENSE` too.
 4. **Commit your lockfile** — the template gitignores `package-lock.json`, `yarn.lock` and `pnpm-lock.yaml` so no derived project inherits a foreign dependency tree or package manager choice. Your project is not a template: remove your package manager's lockfile from `.gitignore`, run `npm install`, and commit the result so your builds are reproducible.
 5. **Rewrite this README** to describe your package.
+
+> **Two demo modules are `.js` on purpose** — the mixed-source build, made concrete; worth a look before step 1 removes them. The support is configuration rather than demo code: `allowJs` in `tsconfig.json` and the `js-with-ts` preset in `jest.config.js`, neither touched by that step.
 
 ## Adding a Public Module
 
@@ -98,9 +106,7 @@ Every publicly importable module is declared by hand in the `exports` map of `pa
 
 > **A module that only re-exports other modules gets no file of its own**, so it cannot be an entry point — the build drops modules that contribute nothing themselves. That is why the demo map declares `./module-a` but not `./module-b`, whose `index.ts` is pure re-exports.
 
-[`validate-exports`](scripts/validate-exports.js) reads the map you just edited and checks that every path it names exists in `dist/`. That catches the mistake this map invites: an entry pointing at a file the build never produced — a typo, a renamed source file, a module the build dropped, or a subpath added before the module behind it.
-
-It checks `main`, `module` and `types` the same way, plus one thing existence cannot catch: that `main` and `module` name the right _kind_ of file — `main` the format your package declares, `module` an ESM one. Modern Node resolves through `exports` and ignores all three fields, so a broken one stays invisible until it reaches a consumer who does not: an older bundler, or TypeScript on `moduleResolution: "node"`.
+[`validate-exports`](scripts/validate-exports.js) reads the map you just edited and checks that every path it names exists in `dist/`, catching the mistake this map invites: an entry pointing at a file the build never produced — a typo, a renamed source file, a module the build dropped, or a subpath added before the module behind it. It checks the legacy `main`, `module` and `types` fields the same way, plus one thing existence cannot catch: that `main` and `module` name the right _kind_ of file — `main` the format your package declares, `module` an ESM one. Modern Node resolves through `exports` and ignores all three, so a broken one stays invisible until it reaches a consumer who does not: an older bundler, or TypeScript on `moduleResolution: "node"`.
 
 It is a **path check** — it confirms the files are there, not that they import cleanly.
 
@@ -115,9 +121,13 @@ BUILD_FORMATS=cjs,types npm run build   # CommonJS-only package
 
 An unknown format name or an empty list fails the build with a clear message, rather than silently producing nothing.
 
-To set it permanently, copy `.env.example` to `.env` and edit it — the `.env` file is gitignored and optional, so nothing breaks if it is absent. An inline `BUILD_FORMATS=... npm run build` always overrides it.
+### Making a Subset Permanent
 
-`npm run validate-exports` does not look at `BUILD_FORMATS` at all — it tries every path `package.json` declares against whatever is actually in `dist/`, regardless of which subset you built. If you settle on a format subset permanently, prune `package.json` to match. Drop the matching conditions from the `exports` map, then drop the entry fields whose format you no longer build:
+A subset you keep needs two edits beyond the build command.
+
+**Set `BUILD_FORMATS` wherever the build runs.** The [Verify workflow](.github/workflows/verify.yml) does not set it, so add it to the `npm run verify` step or CI keeps building all three.
+
+**Prune `package.json` to match.** `validate-exports` tries every path the manifest declares against whatever is actually in `dist/`, so `verify` legitimately fails while the manifest still promises a format you stopped building. Drop that format's conditions from the `exports` map, and drop its entry field:
 
 | Field    | Belongs to    | Keep it when you build |
 | -------- | ------------- | ---------------------- |
@@ -125,9 +135,49 @@ To set it permanently, copy `.env.example` to `.env` and edit it — the `.env` 
 | `module` | `dist/es`     | `es`                   |
 | `types`  | `dist/@types` | `types`                |
 
-Otherwise `verify` legitimately fails on the formats you told it not to build. Once you do, the CI steps follow along on their own: they load whatever the build actually produced.
+> **Delete the field — do not repoint it.** For an ESM-only package, `main: "dist/es/index.js"` looks like the obvious fix and is a trap: `main` is what resolvers that ignore `exports` follow, and they load it as CommonJS, so `require()` throws `ERR_REQUIRE_ESM`. An ESM-only package has no `main` — `module` and `exports` are its entry points. (Setting `"type": "module"` at the top level of `package.json` makes the whole package ESM; then `main` may point at ESM, and the check follows.)
 
-> **Delete the field — do not repoint it.** For an ESM-only package, `main: "dist/es/index.js"` looks like the obvious fix and is a trap: `main` is what resolvers that ignore `exports` follow, and they load it as CommonJS, so a plain `require()` of your package throws `ERR_REQUIRE_ESM`. An ESM-only package has no `main` — `module` and `exports` are the ESM entry points. `validate-exports` fails on this, since the file exists and only its module system is wrong. (If you genuinely want the whole package to be ESM, set `"type": "module"` at the top level of `package.json`; then `main` may point at ESM, and the check follows.)
+## Testing
+
+Jest runs through `ts-jest`, so a test file may be `.ts` or `.js` and import either kind of source. The demo suite sits in `tests/`, but that is a convention rather than a rule — the default patterns pick up `*.test.*` and `__tests__/` anywhere in the project, with the generated directories excluded. Coverage is collected from all of `src/` into `coverage_report/`, so a module no test touches shows up as a gap instead of vanishing from the report.
+
+`verify` deliberately leaves tests out: it answers "does this build, and did every declared path land", not "does it work". Run `npm test` alongside it — CI runs both.
+
+## Continuous Integration
+
+The **Verify** workflow ([.github/workflows/verify.yml](.github/workflows/verify.yml)) is a single job that switches Node versions between steps:
+
+- **Node 22** — installs dependencies, runs `npm run verify`, then `npm run test-coverage`.
+- **Node 18** and **Node 24** — the ends of the `engines` range. Each runs [load-built-output.js](.github/scripts/load-built-output.js) against the `dist/` built above: `dist/cjs/index.js` with `require()`, `dist/es/index.js` with `import()`, plus a presence check on `dist/@types/index.d.ts`.
+
+Loading the barrel parses and executes every emitted module, so those two steps genuinely exercise the `engines` range: a syntax level or runtime API your build emits but Node 18 does not accept fails here.
+
+The script needs no configuration — it loads whatever is in `dist/`, so a pruned build is checked as it stands. Only a `dist/` nobody built fails it; a directory without its entry file, or a barrel that loads but exports nothing (the usual state right after deleting the demo code), is a warning.
+
+The workflow is **manual-dispatch only** — start it from the "_Actions_" tab. Pushes and pull requests do not trigger it, so run `npm run verify` locally before committing.
+
+**Running it automatically.** A published package usually wants this on every pull request. Add the triggers you need alongside the existing one — nothing else has to change:
+
+```yaml
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches: [main]
+```
+
+Scope `push` narrowly — `[main]` above, not every branch — so you are not paying for a full install and build on every commit anywhere.
+
+## Publishing
+
+`package.json` ships only `dist/` (its `files` field), so the tarball carries the build and nothing else — no sources, no tests, no config. `prepack` runs `npm i && npm run build` automatically, so publishing always packs a fresh build instead of whatever `dist/` happened to hold.
+
+Before you publish:
+
+```sh
+npm run verify        # type-check, lint, build, check declared paths
+npm pack --dry-run    # list exactly what would be published
+```
 
 ## Package Scripts
 
@@ -145,7 +195,7 @@ Otherwise `verify` legitimately fails on the formats you told it not to build. O
 | `docs`                | Generate API documentation into `code_documentation/`                                                          |
 | `check-updates`       | Report outdated dependencies                                                                                   |
 | `validate-exports`    | Check that every path `package.json` declares — `exports`, `main`, `module`, `types` — exists in the build     |
-| `verify`              | Everything needed before a commit or release: `check-types` → `lint` → `build` → `validate-exports`            |
+| `verify`              | Build and structural checks in one command: `check-types` → `lint` → `build` → `validate-exports`              |
 | `prepack`             | Install and build before packing — runs automatically on `npm pack` and `npm publish`                          |
 | `clear`               | Remove generated directories: `build/` <sup>**(\*)**</sup>, `code_documentation/`, `coverage_report/`, `dist/` |
 | `reset`               | `clear`, plus `node_modules/`                                                                                  |
@@ -153,62 +203,18 @@ Otherwise `verify` legitimately fails on the formats you told it not to build. O
 
 <sup>**(\*)**</sup> _`build/` is the scratch output directory for a bare `tsc` run, separate from the final build artifacts in `dist/`._
 
-<sup>**(\*\*)**</sup> _Safe while the lockfiles are untracked, as they are in this template. Once you commit yours (step 4 above), prefer plain `reset` in your own checkout._
+<sup>**(\*\*)**</sup> _Safe while the lockfiles are untracked, as they are in this template. Once you commit yours (see [First Steps](#first-steps-after-using-the-template)), prefer plain `reset` in your checkout._
 
 ## Configuration Files
 
-| File                             | Purpose                                                                                                                                                            |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `package.json`                   | Project metadata, dependencies, scripts and the `exports` map. See [npm docs](https://docs.npmjs.com/cli/v10/configuring-npm/package-json)                         |
-| `tsconfig.json`                  | TypeScript compiler settings for type checking and builds. See [TSConfig docs](https://www.typescriptlang.org/tsconfig)                                            |
-| `rollup.config.mjs`              | Build configuration — generates the CommonJS/ESM/Types outputs. See [Rollup docs](https://rollupjs.org/configuration-options)                                      |
-| `.env.example`                   | Template for an optional, gitignored `.env` that selects which formats the build produces. See [Choosing Which Formats to Build](#choosing-which-formats-to-build) |
-| `jest.config.js`                 | Test runner setup with TypeScript support. See [Jest docs](https://jestjs.io/docs/configuration)                                                                   |
-| `.prettierrc`, `.prettierignore` | Formatting rules and the paths excluded from them. See [Prettier docs](https://prettier.io/docs/en/configuration)                                                  |
-| `.gitignore`                     | Version control ignore patterns. See [gitignore docs](https://git-scm.com/docs/gitignore)                                                                          |
-
-## Continuous Integration
-
-The **Verify** workflow ([.github/workflows/verify.yml](.github/workflows/verify.yml)) runs as a single job that switches Node versions between steps:
-
-- **Node 22** — installs dependencies, runs `npm run verify`, then `npm run test-coverage`.
-- **Node 18** and **Node 24** — the ends of the `engines` range. Each runs [load-built-output.js](.github/scripts/load-built-output.js) against the same `dist/` built above: `dist/cjs/index.js` with `require()`, `dist/es/index.js` with `import()`, plus a presence check on `dist/@types/index.d.ts`.
-
-What it loads is decided by what is in `dist/`, so it needs no configuration: build one format and only that one is loaded; build all three and all three are checked. The step fails when none of the three directories exists, which is what a `dist/` nobody built looks like. It warns instead of failing in two softer cases — a directory that exists without its entry file, and a barrel that loads but exports nothing, which is usually the gap between deleting the demo code and writing your own.
-
-Loading the barrel parses and executes every emitted module, so these steps genuinely exercise the `engines` range: a syntax level or runtime API your build emits but Node 18 does not accept fails here.
-
-The workflow is **manual-dispatch only** — start it from the "_Actions_" tab. Pushes and pull requests do not trigger it, so run `npm run verify` locally before committing.
-
-**Running it automatically.** A published package usually wants this on every pull request. Add the triggers you need alongside the existing one:
-
-```yaml
-on:
-  workflow_dispatch:
-  pull_request:
-  push:
-    branches: [main]
-```
-
-Nothing else has to change. Scope `push` narrowly — `[main]` above, not every branch — so you are not paying for a full install and build on every commit anywhere.
-
-## Publishing
-
-`package.json` ships only `dist/` (its `files` field), so the tarball carries the build and nothing else — no sources, no tests, no config. `prepack` runs `npm i && npm run build` automatically, so `npm publish` always packs a fresh build instead of whatever `dist/` happened to hold.
-
-```sh
-npm run verify        # type-check, lint, build, check declared paths
-npm pack --dry-run    # list exactly what would be published
-npm publish
-```
-
-A scoped name (`@you/my-package`) publishes privately by default and fails without a paid account. To publish it publicly:
-
-```json
-"publishConfig": {
-  "access": "public"
-}
-```
+| File                             | Purpose                                                                                                                                    |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `package.json`                   | Project metadata, dependencies, scripts and the `exports` map. See [npm docs](https://docs.npmjs.com/cli/v10/configuring-npm/package-json) |
+| `tsconfig.json`                  | TypeScript compiler settings for type checking and builds. See [TSConfig docs](https://www.typescriptlang.org/tsconfig)                    |
+| `rollup.config.mjs`              | Build configuration — generates the CommonJS/ESM/Types outputs. See [Rollup docs](https://rollupjs.org/configuration-options)              |
+| `jest.config.js`                 | Test runner setup with TypeScript support. See [Jest docs](https://jestjs.io/docs/configuration)                                           |
+| `.prettierrc`, `.prettierignore` | Formatting rules and the paths excluded from them. See [Prettier docs](https://prettier.io/docs/en/configuration)                          |
+| `.gitignore`                     | Version control ignore patterns. See [gitignore docs](https://git-scm.com/docs/gitignore)                                                  |
 
 ## Issues and Support
 

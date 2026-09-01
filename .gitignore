@@ -41,15 +41,6 @@ yarn.lock
 pnpm-lock.yaml
 
 ############################
-# Dotenv
-############################
-.env
-.env.development.local
-.env.test.local
-.env.production.local
-.env.local
-
-############################
 # VS Code
 ############################
 .vscode
