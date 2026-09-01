@@ -3,10 +3,9 @@ name: Verify
 on:
   workflow_dispatch:
 
-# One run per branch. On workflow_dispatch head_ref is empty and this is just
-# github.ref, so a second manual run cancels the first; the head_ref half is
-# there for the day a pull_request trigger is added, where ref names the merge
-# ref and would group every PR separately from its own branch.
+# One run per branch. head_ref is empty outside pull_request, so this falls
+# back to ref (workflow_dispatch); it matters once pull_request is added,
+# where ref is the merge ref and would group all PRs together otherwise.
 concurrency:
   group: ${{ github.head_ref || github.ref }}
   cancel-in-progress: true

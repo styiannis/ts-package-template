@@ -39,7 +39,7 @@ function loadEnvFile(path = '.env') {
 loadEnvFile();
 
 /* ========================================================================== */
-/* Plugin helpers                                                             */
+/* Build helpers                                                              */
 /* ========================================================================== */
 
 function emitPackageType(type) {
@@ -129,24 +129,26 @@ function Types(input, srcDir, distDir, useExternal) {
 /* ========================================================================== */
 
 const BUILDERS = { cjs: CJS, es: ES, types: Types };
-const ALL_FORMATS = Object.keys(BUILDERS);
+const ALL_BUILD_FORMATS = Object.keys(BUILDERS);
 
-const formats = (process.env.BUILD_FORMATS ?? ALL_FORMATS.join(','))
+const formats = (process.env.BUILD_FORMATS ?? ALL_BUILD_FORMATS.join(','))
   .split(',')
   .map((s) => s.trim().toLowerCase())
   .filter(Boolean);
 
-const unknownFormats = formats.filter((f) => !ALL_FORMATS.includes(f));
-
-if (unknownFormats.length > 0) {
+if (formats.length === 0) {
   throw new Error(
-    `BUILD_FORMATS: unknown format(s) "${unknownFormats.join(', ')}". Valid: ${ALL_FORMATS.join(', ')}.`
+    `BUILD_FORMATS: at least one of "${ALL_BUILD_FORMATS.join(', ')}" is required.`
   );
 }
 
-if (formats.length === 0) {
+const unknownFormats = process.env.BUILD_FORMATS
+  ? formats.filter((f) => !ALL_BUILD_FORMATS.includes(f))
+  : [];
+
+if (unknownFormats.length > 0) {
   throw new Error(
-    `BUILD_FORMATS: at least one of "${ALL_FORMATS.join(', ')}" is required.`
+    `BUILD_FORMATS: unknown format(s) "${unknownFormats.join(', ')}". Valid: ${ALL_BUILD_FORMATS.join(', ')}.`
   );
 }
 

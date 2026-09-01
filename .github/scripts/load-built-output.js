@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 //
-// Loads the built output on the Node version in use -- dist/cjs with require(),
-// dist/es with import() -- so CI can prove the package runs at both ends of the
-// "engines" range. The barrel re-exports the whole graph, so loading it parses
-// every emitted module.
+// Loads dist/cjs via require() and dist/es via import() on whichever Node
+// version invokes it -- CI runs this once per Node version it wants to
+// verify. The barrel re-exports the whole graph, so loading it parses
+// every module.
 //
-// Its subject is dist/ and nothing else: no configuration, no "exports" map.
-// Build one format and only that one is loaded, so pruning needs no edit here.
+// Scoped to dist/ only, no config or "exports" map: only built formats load,
+// so pruning a format needs no edit here.
 
 /* ========================================================================== */
 /* Setup                                                                      */
@@ -24,13 +24,13 @@ const root = join(__dirname, '..', '..');
 
 // Declarations get no loader -- they do not exist at runtime.
 const formats = [
-  { dir: 'dist/cjs', entry: 'index.js', load: (path) => require(path) },
+  { dir: 'dist/@types', entry: 'index.d.ts', loader: null },
+  { dir: 'dist/cjs', entry: 'index.js', loader: (path) => require(path) },
   {
     dir: 'dist/es',
     entry: 'index.js',
-    load: (path) => import(pathToFileURL(path).href),
+    loader: (path) => import(pathToFileURL(path).href),
   },
-  { dir: 'dist/@types', entry: 'index.d.ts', load: null },
 ];
 
 /* ========================================================================== */
@@ -48,27 +48,30 @@ async function main() {
     process.exit(1);
   }
 
-  for (const { dir, entry, load } of built) {
+  for (const { dir, entry, loader } of built) {
     const path = join(root, dir, entry);
 
     if (!existsSync(path)) {
-      console.warn(`warning: ${dir}/ holds no ${entry} -- nothing to load`);
+      console.warn(`Warning: ${dir}/ holds no ${entry} -- nothing to load`);
       continue;
     }
 
-    const namespace = load ? await load(path) : null;
     console.log(`${dir}/${entry} ok`);
 
-    // An empty barrel is legitimate -- a package may route everything through
-    // subpaths -- but usually means src/index.ts still has nothing to export.
-    // The typeof guard matters: a default-only barrel compiles to
-    // `module.exports = fn`, whose Object.keys() is empty however valid it is.
+    if (!loader) {
+      continue; // declarations (see formats above): nothing to load
+    }
+
+    const namespace = await loader(path);
+
+    // Empty is usually a forgotten src/index.ts, though a package may legitimately
+    // route everything through subpaths. The typeof guard excludes a default-only
+    // barrel (`module.exports = fn`), whose Object.keys() is empty but valid.
     if (
-      load &&
       typeof namespace !== 'function' &&
       0 === Object.keys(namespace ?? {}).length
     ) {
-      console.warn(`  warning: exports nothing -- check src/index.ts`);
+      console.warn('Warning: exports nothing -- check src/index.ts');
     }
   }
 }
