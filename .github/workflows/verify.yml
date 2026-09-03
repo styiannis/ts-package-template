@@ -29,7 +29,7 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Verify (type checks, linting, build, exports validation)
+      - name: Verify (type checks, linting, build, dist checks)
         # Builds all three formats by default. If you pinned BUILD_FORMATS
         # for the package, set it here too (see README) or CI drifts from it.
         run: npm run verify
@@ -37,18 +37,20 @@ jobs:
       - name: Test script with coverage reporting
         run: npm run test-coverage
 
+      # These two steps swap the runtime only -- the dist/ built above stays
+      # put, which is the point: one build, loaded on both ends of the range.
       - name: Set up Node.js 18 (engines floor)
         uses: actions/setup-node@v4
         with:
           node-version: 18
 
-      - name: Load built output (Node 18)
-        run: node ./.github/scripts/load-built-output.js
+      - name: Check dist loads (Node 18)
+        run: npm run check-dist-loads
 
       - name: Set up Node.js 24 (engines ceiling)
         uses: actions/setup-node@v4
         with:
           node-version: 24
 
-      - name: Load built output (Node 24)
-        run: node ./.github/scripts/load-built-output.js
+      - name: Check dist loads (Node 24)
+        run: npm run check-dist-loads

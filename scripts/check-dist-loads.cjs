@@ -1,26 +1,15 @@
-#!/usr/bin/env node
-//
 // Loads dist/cjs via require() and dist/es via import() on whichever Node
-// version invokes it -- CI runs this once per Node version it wants to
-// verify. The barrel re-exports the whole graph, so loading it parses
-// every module.
+// version invokes it. The barrel re-exports the whole graph, so loading it
+// parses every module.
 //
 // Scoped to dist/ only, no config or "exports" map: only built formats load,
 // so pruning a format needs no edit here.
-
-/* ========================================================================== */
-/* Setup                                                                      */
-/* ========================================================================== */
 
 const { existsSync } = require('node:fs');
 const { join } = require('node:path');
 const { pathToFileURL } = require('node:url');
 
-const root = join(__dirname, '..', '..');
-
-/* ========================================================================== */
-/* Format table                                                               */
-/* ========================================================================== */
+const root = join(__dirname, '..');
 
 // Declarations get no loader -- they do not exist at runtime.
 const formats = [
@@ -33,10 +22,6 @@ const formats = [
   },
 ];
 
-/* ========================================================================== */
-/* Load check                                                                 */
-/* ========================================================================== */
-
 async function main() {
   const built = formats.filter(({ dir }) => existsSync(join(root, dir)));
 
@@ -45,7 +30,8 @@ async function main() {
       `Nothing was built: none of ${formats.map((f) => f.dir).join(', ')}\n` +
         `exists. Run "npm run build" before this step.`
     );
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
 
   for (const { dir, entry, loader } of built) {
@@ -56,31 +42,24 @@ async function main() {
       continue;
     }
 
+    const namespace = loader ? await loader(path) : null;
+
     console.log(`${dir}/${entry} ok`);
-
-    if (!loader) {
-      continue; // declarations (see formats above): nothing to load
-    }
-
-    const namespace = await loader(path);
 
     // Empty is usually a forgotten src/index.ts, though a package may legitimately
     // route everything through subpaths. The typeof guard excludes a default-only
     // barrel (`module.exports = fn`), whose Object.keys() is empty but valid.
     if (
+      namespace &&
       typeof namespace !== 'function' &&
-      0 === Object.keys(namespace ?? {}).length
+      0 === Object.keys(namespace).length
     ) {
       console.warn('Warning: exports nothing -- check src/index.ts');
     }
   }
 }
 
-/* ========================================================================== */
-/* Entry point                                                                */
-/* ========================================================================== */
-
 main().catch((error) => {
   console.error(error);
-  process.exit(1);
+  process.exitCode = 1;
 });

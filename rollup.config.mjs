@@ -5,24 +5,19 @@ import typescript from '@rollup/plugin-typescript';
 import fs from 'node:fs';
 import { dts } from 'rollup-plugin-dts';
 
-/* ========================================================================== */
-/* Setup                                                                      */
-/* ========================================================================== */
-
 const pkg = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
 
-/* ========================================================================== */
-/* Build helpers                                                              */
-/* ========================================================================== */
+function emitPackageManifest(type) {
+  const sideEffects =
+    typeof pkg.sideEffects === 'boolean' ? pkg.sideEffects : true;
 
-function emitPackageType(type) {
   return {
     name: 'emit-package-type',
     generateBundle() {
       this.emitFile({
         type: 'asset',
         fileName: 'package.json',
-        source: `${JSON.stringify({ type }, null, 2)}\n`,
+        source: `${JSON.stringify({ type, sideEffects }, null, 2)}\n`,
       });
     },
   };
@@ -45,10 +40,6 @@ function output(preserveModulesRoot, dir, format) {
   return { dir, format, preserveModulesRoot, preserveModules: true };
 }
 
-/* ========================================================================== */
-/* Format builders                                                            */
-/* ========================================================================== */
-
 function CJS(input, srcDir, distDir, useExternal) {
   const format = 'cjs';
   const outDir = `${distDir}/${format}`;
@@ -59,7 +50,7 @@ function CJS(input, srcDir, distDir, useExternal) {
     plugins: [
       ...(useExternal ? [] : [resolve()]),
       typescript({ compilerOptions: { outDir } }),
-      emitPackageType('commonjs'),
+      emitPackageManifest('commonjs'),
     ],
     external: useExternal ? external() : undefined,
   };
@@ -75,7 +66,7 @@ function ES(input, srcDir, distDir, useExternal) {
     plugins: [
       ...(useExternal ? [] : [resolve()]),
       typescript({ compilerOptions: { outDir } }),
-      emitPackageType('module'),
+      emitPackageManifest('module'),
     ],
     external: useExternal ? external() : undefined,
   };
@@ -88,18 +79,10 @@ function Types(input, srcDir, distDir, useExternal) {
   return {
     input,
     output: output(srcDir, outDir, format),
-    plugins: [
-      ...(useExternal ? [] : [resolve()]),
-      typescript({ compilerOptions: { outDir } }),
-      dts(),
-    ],
+    plugins: [...(useExternal ? [] : [resolve()]), dts()],
     external: useExternal ? external() : undefined,
   };
 }
-
-/* ========================================================================== */
-/* Format resolution                                                          */
-/* ========================================================================== */
 
 const BUILDERS = { cjs: CJS, es: ES, types: Types };
 const ALL_BUILD_FORMATS = Object.keys(BUILDERS);
@@ -125,14 +108,14 @@ if (unknownFormats.length > 0) {
   );
 }
 
-/* ========================================================================== */
-/* Entry & export                                                             */
-/* ========================================================================== */
-
 const srcDir = 'src';
 const distDir = 'dist';
 const inputFile = `${srcDir}/index.ts`;
 
+// Declared dependencies stay external;
+// false inlines them via resolve().
+const useExternal = true;
+
 export default formats.map((f) =>
-  BUILDERS[f](inputFile, srcDir, distDir, true)
+  BUILDERS[f](inputFile, srcDir, distDir, useExternal)
 );
