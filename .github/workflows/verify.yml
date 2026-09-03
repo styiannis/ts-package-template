@@ -3,11 +3,11 @@ name: Verify
 on:
   workflow_dispatch:
 
-# One run per branch. head_ref is empty outside pull_request, so this falls
-# back to ref (workflow_dispatch); it matters once pull_request is added,
-# where ref is the merge ref and would group all PRs together otherwise.
+# One run per branch, scoped to this workflow -- groups are repo-wide, so an
+# unprefixed one lets a second workflow cancel these runs. head_ref is empty
+# outside pull_request, so this falls back to ref for workflow_dispatch.
 concurrency:
-  group: ${{ github.head_ref || github.ref }}
+  group: verify-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -18,8 +18,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Set up Node.js 22 (build & test)
         uses: actions/setup-node@v4

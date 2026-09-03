@@ -12,7 +12,7 @@ function emitPackageManifest(type) {
     typeof pkg.sideEffects === 'boolean' ? pkg.sideEffects : true;
 
   return {
-    name: 'emit-package-type',
+    name: 'emit-package-manifest',
     generateBundle() {
       this.emitFile({
         type: 'asset',
