@@ -46,9 +46,9 @@
     "check-declared-paths": "node ./scripts/check-declared-paths.cjs",
     "check-dist-loads": "node ./scripts/check-dist-loads.cjs",
     "check-types": "tsc --noEmit",
-    "check-updates": "npx npm-check-updates@23.1.0",
+    "check-updates": "npx npm-check-updates@23",
     "clear": "node ./scripts/clear.cjs ./build ./code_documentation ./coverage_report ./dist",
-    "docs": "node ./scripts/clear.cjs ./code_documentation && npx typedoc@0.28.20 --basePath ./ --entryPoints src/index.ts --entryPointStrategy Expand --readme none --includeVersion --out code_documentation",
+    "docs": "node ./scripts/clear.cjs ./code_documentation && typedoc --basePath ./ --entryPoints src/index.ts --entryPointStrategy Expand --readme none --includeVersion --out code_documentation",
     "format": "prettier -w ./",
     "lint": "oxlint --deny-warnings src scripts",
     "prepack": "npm i && npm run build",
@@ -71,6 +71,7 @@
     "rollup-plugin-dts": "^6.5.1",
     "ts-jest": "^29.4.12",
     "tslib": "^2.8.1",
+    "typedoc": "^0.28.20",
     "typescript": "^5.9.3"
   },
   "exports": {

@@ -39,7 +39,7 @@ Mixed `.ts`/`.js` sources build, type-check and test side by side, so a JavaScri
 
 ## What It Does Not Do
 
-Plumbing, not policy: no git hooks, no commit-message rules, no CI that blocks a push. The linter and formatter ship with defaults, not opinions you are expected to keep. A fresh clone needs Node and npm and nothing else — the peripheral tools run on demand rather than taking a dependency slot.
+Plumbing, not policy: no git hooks, no commit-message rules, no CI that blocks a push. The linter and formatter ship with defaults, not opinions you are expected to keep. A fresh clone needs Node and npm and nothing else.
 
 What it does enforce is narrow and mechanical: every entry point your package declares has to exist in the build, in the right module format, and load on the Node versions you claim to support. Those checks and the workflow around them are described below — few, but they hold. The cost is honest: no safety net, and nothing runs unless you run it.
 
