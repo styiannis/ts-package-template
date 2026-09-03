@@ -12,8 +12,8 @@
     "exactOptionalPropertyTypes": true,
     "noUncheckedIndexedAccess": true,
     "allowJs": true,
-    "outDir": "build", // @note: Specifies where the TypeScript compiler (`tsc`) outputs its generated files. This directory is separate from the `dist` folder used by the `npm run build` script, which outputs the final build artifacts.
-    "rootDir": "src"
+    "outDir": "build", // Specifies where the TypeScript compiler (`tsc`) outputs its generated files. This directory is separate from the `dist` folder used by the `npm run build` script, which outputs the final build artifacts.
+    "rootDir": "."
   },
-  "include": ["src"]
+  "include": ["src", "tests"]
 }
