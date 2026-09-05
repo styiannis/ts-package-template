@@ -1,300 +1,226 @@
 # TypeScript Package Template
 
-![Static Badge](https://img.shields.io/badge/Node.js-ffffff?logo=nodedotjs&logoColor=417e38)
-![Static Badge](https://img.shields.io/badge/JavaScript-ffffff?logo=javascript&logoColor=fcdc00)
-![Static Badge](https://img.shields.io/badge/TypeScript-ffffff?logo=typescript&logoColor=3178c6)
-![Static Badge](https://img.shields.io/badge/Rollup.js-ffffff?logo=rollup.js&logoColor=ff3333)
-![Static Badge](https://img.shields.io/badge/Jest-ffffff?logo=jest&logoColor=c21325)
-![Static Badge](https://img.shields.io/badge/Prettier-ffffff?logo=prettier&logoColor=f7ba3e)
+![Static Badge](https://img.shields.io/badge/Node.js-ffffff?style=flat-square&logo=nodedotjs)
+![Static Badge](https://img.shields.io/badge/JavaScript-ffffff?style=flat-square&logo=javascript)
+![Static Badge](https://img.shields.io/badge/TypeScript-ffffff?style=flat-square&logo=typescript)
+![Static Badge](https://img.shields.io/badge/Rollup.js-ffffff?style=flat-square&logo=rollup.js)
+![Static Badge](https://img.shields.io/badge/Jest-ffffff?style=flat-square&logo=jest&logoColor=c21325)
+![Static Badge](https://img.shields.io/badge/Oxlint-ffffff?style=flat-square&logo=oxc)
+![Static Badge](https://img.shields.io/badge/Prettier-ffffff?style=flat-square&logo=prettier)
 
-A TypeScript package template delivering dual-format builds (CommonJS/ESM), comprehensive type declarations, and maintained source hierarchy for modular package development.
+A template for publishing TypeScript packages whose **source hierarchy survives into the build** — so consumers can import one deep submodule instead of your whole barrel.
 
-## Features
+Zero runtime dependencies. CommonJS, ESM and type declarations from a single source tree.
 
-### Development
+Your sources on the left, what a consumer installs on the right:
 
-- 🏗️ **Modular Exports** - Preserves source structure in build output for optimal organization
-- 📦 **Dual Module System** - Seamless support for both CommonJS and ESM formats
-- 🔷 **Type Safety** - Strict TypeScript checking for enhanced reliability
+```
+src/                  dist/es/             dist/cjs/            dist/@types/es/      dist/@types/cjs/
+├── index.ts       →  ├── index.mjs        ├── index.cjs        ├── index.d.mts      ├── index.d.cts
+└── shapes/           └── shapes/          └── shapes/          └── shapes/          └── shapes/
+    ├── index.ts          ├── index.mjs        ├── index.cjs        ├── index.d.mts      ├── index.d.cts
+    └── circle.ts         └── circle.mjs       └── circle.cjs       └── circle.d.mts      └── circle.d.cts
+```
 
-### Testing & Quality
+The extension alone settles the module system — `.mjs`/`.d.mts` is ESM, `.cjs`/`.d.cts` is CommonJS — so nothing in `dist/` needs its own `package.json` to say so.
 
-- 🧪 **Testing** - Jest-powered test suite with coverage reporting
-- 🔍 **Code Quality** - Automated linting and formatting pipeline
-- 🔄 **CI/CD** - GitHub Actions for seamless integration workflow
+Every emitted module keeps its path, so every module can be its own entry point:
 
-### Tools & Documentation
+```ts
+import { hello } from 'my-package'; // the barrel
+import { Circle } from 'my-package/circle'; // one module, nothing else
+```
 
-- 🛠️ **Build Tools** - Optimized bundling with Rollup.js
-- 📝 **Documentation** - Automated TypeDoc API generation
+```js
+const { Circle } = require('my-package/circle'); // same subpath, CommonJS
+```
 
-## Table of Contents
+Declared entry points are **checked, not assumed**: `npm run verify` builds, then confirms every path `package.json` promises landed in `dist/` — and that what landed actually loads.
 
-- [System Requirements](#system-requirements)
-- [Getting Started](#getting-started)
-  - [Use Template](#use-template)
-  - [Customize Template](#customize-template)
-- [Configuration Files](#configuration-files)
-  - [Build Configuration](#build-configuration)
-  - [Testing Configuration](#testing-configuration)
-  - [Code Quality Configuration](#code-quality-configuration)
-- [Package Scripts](#package-scripts)
-  - [Build Scripts](#build-scripts)
-    - [build](#build)
-    - [dev](#dev)
-  - [Test Scripts](#test-scripts)
-    - [test](#test)
-    - [test-watch](#test-watch)
-    - [test-coverage](#test-coverage)
-    - [test-coverage-watch](#test-coverage-watch)
-  - [Code Quality Scripts](#code-quality-scripts)
-    - [check-types](#check-types)
-    - [format](#format)
-    - [lint](#lint)
-  - [Documentation Scripts](#documentation-scripts)
-    - [docs](#docs)
-  - [Utility Scripts](#utility-scripts)
-    - [check-updates](#check-updates)
-    - [ci](#ci)
-    - [clear](#clear)
-    - [prepack](#prepack)
-    - [reset](#reset)
-    - [validate-exports](#validate-exports)
-- [Continuous Integration](#continuous-integration)
-  - [Build and Test Workflow](#build-and-test-workflow)
-- [Issues and Support](#issues-and-support)
-- [License](#license)
+Mixed `.ts`/`.js` sources build, type-check and test side by side, so a JavaScript package can migrate incrementally.
+
+## What It Does Not Do
+
+Plumbing, not policy: no git hooks, no commit-message rules, no CI that blocks a push. The linter and formatter ship with defaults, not opinions you are expected to keep. A fresh clone needs Node and npm and nothing else.
+
+What it does enforce is narrow and mechanical: every entry point your package declares has to exist in the build, in the right module format, and load on the Node versions you claim to support. Those checks and the workflow around them are described below — few, but they hold. The cost is honest: no safety net, and nothing runs unless you run it.
 
 ## System Requirements
 
-| Package     | Version    |
-| ----------- | ---------- |
-| **Node.js** | ≥ `18.0.0` |
-| **npm**     | ≥ `8.0.0`  |
+| Package     | Version     |
+| ----------- | ----------- |
+| **Node.js** | ≥ `18.12.0` |
+| **npm**     | ≥ `8.0.0`   |
+
+Node ≥ `22.12.0` is recommended for development (declared in `devEngines`, warning only).
 
 ## Getting Started
 
-### Use Template
-
-You can start using this template in two ways:
-
-**A.** Using GitHub's "_Use this template_" button:
-
-1. Click the "_Use this template_" button at the top of the repository
-2. Follow GitHub's instructions to create your repository
-3. Clone your new repository locally
-
-**B.** Direct clone:
+Either click the "_Use this template_" button at the top of the repository and clone the result, or clone this repository directly:
 
 ```sh
-git clone https://github.com/styiannis/tmplt-ts-package my-package
+git clone https://github.com/styiannis/ts-package-template my-package
 cd my-package
 npm install
+npm run verify
 ```
 
-### Customize Template
+A green `verify` means it type-checks, lints, builds, and every declared entry point really landed and loads.
 
-- **Update `package.json`**:
-  - Update `name`, `version`, `description`, `keywords`, `author`, and `license` fields to reflect your project details.
-  - Update the `repository` and `bugs` fields to point to your project's repository and issue tracker.
-  - Ensure the `exports` section aligns with your package structure.
+### First Steps After Using the Template
 
-- **Update Source Files**:
-  - Modify the files in `./src` directory and customize `index.ts` to export your project's main functionalities.
+Everything under `src/` and `tests/` is placeholder demo code, named `module-a`/`module-b` rather than the illustrative `shapes/` of the diagram above. To make the template yours:
 
-- **Update Test Files**:
-  - Modify the tests in `./tests` directory to verify the functionality of your project's source files.
+1. **Delete the demo code** — `src/module-a/`, `src/module-b/` and the three files in `tests/`. Write your own modules and re-export them from `src/index.ts`.
+2. **Replace the `exports` map** — the 8 demo entries in `package.json` describe the demo modules. See [Adding a public module](#adding-a-public-module).
+3. **Update the metadata** — `name`, `version`, `description`, `keywords`, `author`, `license`, plus `repository` and `bugs` so they point at your own repository and issue tracker. Replace the copyright line in `LICENSE` too.
+4. **Commit your lockfile** — the template gitignores `package-lock.json`, `yarn.lock` and `pnpm-lock.yaml` so no derived project inherits a foreign dependency tree or package manager choice. Your project is not a template: remove your package manager's lockfile from `.gitignore`, run `npm install`, and commit the result so your builds are reproducible.
+5. **Rewrite this README** to describe your package.
 
-- **Update Documentation**:
-  - Revise the `README.md` document to accurately reflect your project.
+> **Two demo modules are `.js` on purpose** — the mixed-source build, made concrete; worth a look before step 1 removes them. The support is configuration rather than demo code: `allowJs` in `tsconfig.json` and the `js-with-ts` preset in `jest.config.cjs`, neither touched by that step.
 
-## Configuration Files
+## Adding a Public Module
 
-### Build Configuration
+Every publicly importable module is declared by hand in the `exports` map of `package.json`. Adding one is three steps:
 
-- `package.json` - Project configuration, dependencies and scripts. See [npm docs](https://docs.npmjs.com/cli/v10/configuring-npm/package-json)
-- `tsconfig.json` - TypeScript compiler settings for type checking and builds. See [TSConfig docs](https://www.typescriptlang.org/tsconfig)
-- `rollup.config.mjs` - Bundler setup for generating CommonJS/ESM/Types outputs. See [Rollup docs](https://rollupjs.org/configuration-options)
+**1.** Create the file under `src/`, and re-export it from `src/index.ts` if it also belongs in the barrel.
 
-### Testing Configuration
+**2.** Add a matching block to `exports`:
 
-- `jest.config.js` - Jest testing framework setup with TypeScript support. See [Jest docs](https://jestjs.io/docs/configuration)
-
-### Code Quality Configuration
-
-- `.prettierrc` - Code formatting rules for consistent style. See [Prettier docs](https://prettier.io/docs/en/configuration)
-- `.prettierignore` - Files and folders to exclude from formatting
-- `.gitignore` - Version control ignore patterns for Git. See [gitignore docs](https://git-scm.com/docs/gitignore)
-
-## Package Scripts
-
-### Build Scripts
-
-#### build
-
-Build the package into CommonJS, ESM formats with TypeScript declarations in `./dist` folder:
-
-- `./dist/cjs/*` - CommonJS modules
-- `./dist/es/*` - ESM modules
-- `./dist/@types/*` - TypeScript declarations
-
-```sh
-npm run build
+```json
+"./my-module": {
+  "import": {
+    "types": "./dist/@types/es/path/to/my-module.d.mts",
+    "default": "./dist/es/path/to/my-module.mjs"
+  },
+  "require": {
+    "types": "./dist/@types/cjs/path/to/my-module.d.cts",
+    "default": "./dist/cjs/path/to/my-module.cjs"
+  }
+}
 ```
 
-#### dev
+`types` must stay first inside each condition — conditions are matched in order.
 
-Development (watch) mode: Rebuild package automatically when source files change.
+**3.** Run `npm run build && npm run check-declared-paths`.
 
-```sh
-npm run dev
+> **The subpath is a name you choose, not the file path.** The demo map deliberately flattens: `./submodule-a1` resolves to `dist/*/module-a/submodule-a1.{mjs,cjs}`. Consumers type the subpath, so pick what reads well and keep the three paths inside the block consistent with the actual file location.
+
+> **A module that only re-exports other modules gets no file of its own**, so it cannot be an entry point — the build drops modules that contribute nothing themselves. That is why the demo map declares `./module-a` but not `./module-b`, whose `index.ts` is pure re-exports.
+
+[`check-declared-paths`](scripts/check-declared-paths.cjs) reads the map you just edited and checks that every path it names exists in `dist/`, catching the mistake this map invites: an entry pointing at a file the build never produced — a typo, a renamed source file, a module the build dropped, or a subpath added before the module behind it. It checks the legacy `main`, `module` and `types` fields the same way, plus one thing existence cannot catch: that each path names the right _kind_ of file for the condition enclosing it — `main` and the legacy `types` the format your package declares, `module` an ESM file, every `import` condition (including its `types` leaf) an ESM/`.mjs`/`.d.mts` file, every `require` condition (including its `types` leaf) a CommonJS/`.cjs`/`.d.cts` file. Modern Node resolves through `exports` and ignores the legacy fields, so a broken one stays invisible until it reaches a consumer who does not: an older bundler, or TypeScript on `moduleResolution: "node"`. It also checks `source` exists, for tooling that resolves straight to pre-build TypeScript instead of `dist/`.
+
+It is a **path check** — it confirms the files are there, not that they import cleanly. That is [`check-dist-loads`](scripts/check-dist-loads.cjs), which loads the built barrels on whichever Node runs it. `verify` runs both; CI repeats the load check at each end of the `engines` range.
+
+## Building Only One Format
+
+Both formats are built, each paired with its own type declarations. There is no flag for this — the format list is a literal in [rollup.config.mjs](rollup.config.mjs), and it is the whole config's export:
+
+```js
+export default ['cjs', 'es'].flatMap((format) => [
+  buildJS(format, srcFile, srcDir, distDir, useExternal),
+  buildTypes(format, srcFile, srcDir, distDir, useExternal),
+]);
 ```
 
-### Test Scripts
+Dropping a format is dropping a name from that array. An environment variable was deliberately not kept: it has to be set identically everywhere the build runs — your shell, `prepack`, CI — and one place that forgets it ships a different package than the other two. An edit made once in the config cannot drift.
 
-#### test
+**Prune `package.json` to match.** `check-declared-paths` tries every path the manifest declares against whatever is actually in `dist/`, so `verify` legitimately fails while the manifest still promises a format you stopped building. Drop that format's conditions from the `exports` map, and drop its entry field:
 
-Run all unit tests once.
+| Field    | Belongs to        | Keep it when you build |
+| -------- | ----------------- | ---------------------- |
+| `main`   | `dist/cjs`        | `cjs`                  |
+| `module` | `dist/es`         | `es`                   |
+| `types`  | `dist/@types/cjs` | `cjs`                  |
 
-```sh
-npm run test
-```
+> **Delete the field — do not repoint it.** For an ESM-only package, `main: "dist/es/index.mjs"` looks like the obvious fix and is a trap: `main` is what resolvers that ignore `exports` follow, and a resolver that treats `.mjs` as ESM already exists but many that predate it do not, loading it as CommonJS and throwing `ERR_REQUIRE_ESM`. An ESM-only package has no `main` — `module` and `exports` are its entry points.
 
-#### test-watch
+## Testing
 
-Run tests in watch mode for development.
+Jest runs through `ts-jest`, so a test file may be `.ts` or `.js` and import either kind of source. The demo suite sits in `tests/`, but that is a convention rather than a rule — the default patterns pick up `*.test.*` and `__tests__/` anywhere in the project, with the generated directories excluded. Coverage is collected from all of `src/` into `coverage_report/`, so a module no test touches shows up as a gap instead of vanishing from the report.
 
-```sh
-npm run test-watch
-```
-
-#### test-coverage
-
-Run tests with coverage reporting in `./coverage_report` folder.
-
-```sh
-npm run test-coverage
-```
-
-#### test-coverage-watch
-
-Run tests with coverage in watch mode.
-
-```sh
-npm run test-coverage-watch
-```
-
-### Code Quality Scripts
-
-#### check-types
-
-Verify TypeScript types without emitting files.
-
-```sh
-npm run check-types
-```
-
-#### format
-
-Format all files using Prettier configuration.
-
-```sh
-npm run format
-```
-
-#### lint
-
-Run code quality checks.
-
-```sh
-npm run lint
-```
-
-### Documentation Scripts
-
-#### docs
-
-Generate code documentation from source files in `./code_documentation` folder.
-
-```sh
-npm run docs
-```
-
-### Utility Scripts
-
-#### check-updates
-
-Scan for outdated package dependencies.
-
-```sh
-npm run check-updates
-```
-
-#### ci
-
-Run continuous integration checks: types, lint, build and exports validation.
-
-```sh
-npm run ci
-```
-
-#### clear
-
-Clean up generated directories (`./build` <sup>**(\*)**</sup>, `./code_documentation`, `./coverage_report`, `./dist`).
-
-```sh
-npm run clear
-```
-
-<sup>**(\*)**</sup> _The `./build` directory serves as temporary output for TypeScript compilation (`tsc`), separate from the final build artifacts in `./dist`._
-
-#### prepack
-
-Install dependencies and build package before publishing. It runs automatically during `npm pack` and `npm publish`. See [npm docs: prepack](https://docs.npmjs.com/cli/v10/using-npm/scripts#life-cycle-scripts).
-
-```sh
-npm run prepack
-```
-
-#### reset
-
-Remove dependencies and all generated files (`./build`, `./code_documentation`, `./coverage_report`, `./dist`, `./node_modules`, `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`).
-
-```sh
-npm run reset
-```
-
-#### validate-exports
-
-Verify `package.json` exports paths exist in build output.
-
-```sh
-npm run validate-exports
-```
+`verify` deliberately leaves tests out: it answers "does this build, and did every declared path land and load", not "does it work". Run `npm test` alongside it — CI runs both.
 
 ## Continuous Integration
 
-This project uses GitHub Actions for continuous integration workflows.
+The **Verify** workflow ([.github/workflows/verify.yml](.github/workflows/verify.yml)) is a single job that switches Node versions between steps:
 
-### Build and Test Workflow
+- **Node 22** — installs dependencies, runs `npm run verify`, then `npm run test-coverage`.
+- **Node 18** and **Node 24** — the ends of the `engines` range. Switching Node does not rebuild: each runs [`check-dist-loads`](scripts/check-dist-loads.cjs) against the same `dist/` built above — `dist/cjs/index.cjs` with `require()`, `dist/es/index.mjs` with `import()`, plus a presence check on `dist/@types/es/index.d.mts` and `dist/@types/cjs/index.d.cts`.
 
-The **Build and Test** workflow ensures code quality and test coverage by performing the following steps:
+Loading the barrel parses and executes every emitted module, and `verify` already ran the same check on Node 22, so the build is exercised across the whole `engines` range: a syntax level or runtime API your build emits but Node 18 does not accept fails here.
 
-- **Checkout Code**: Checks out the repository code.
-- **Set Up Node.js Environment**: Configures the Node.js environment.
-- **Install Dependencies**: Installs project dependencies using `npm install`.
-- **Run CI Script**: Executes `npm run ci` to perform type checks, linting, build, and exports validation.
-- **Run Tests with Coverage**: Runs `npm run test-coverage` to execute tests with coverage reporting.
-- **Reset Environment**: Cleans up the environment using `npm run reset`.
+The script needs no configuration — it loads whatever is in `dist/`, so a pruned build is checked as it stands. A pruned format leaves no directory and is skipped; a directory that exists but holds no entry file is a build that broke partway, and fails. A barrel that loads but exports nothing — the usual state right after deleting the demo code — is only a warning.
 
-**Trigger**: This workflow is set up for manual triggering via [workflow dispatch](https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#workflow_dispatch). You can manually start the workflow from the "_Actions_" tab in your GitHub repository.
+The workflow is **manual-dispatch only** — start it from the "_Actions_" tab. Pushes and pull requests do not trigger it, so run `npm run verify` locally before committing.
 
-For more information on configuring and using GitHub Actions, refer to the [GitHub Actions Documentation](https://docs.github.com/en/actions).
+**Running it automatically.** A published package usually wants this on every pull request. Add the triggers you need alongside the existing one — nothing else has to change:
+
+```yaml
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches: [main]
+```
+
+Scope `push` narrowly — `[main]` above, not every branch — so you are not paying for a full install and build on every commit anywhere.
+
+## Publishing
+
+`package.json` ships only `dist/` (its `files` field), so the tarball carries the build and nothing else — no sources, no tests, no config. `prepack` runs `npm i && npm run build` automatically, so publishing always packs a fresh build instead of whatever `dist/` happened to hold. That includes `npm pack --dry-run`, which is not a quick look: it reinstalls, clears `dist/` and rebuilds before printing the list.
+
+Before you publish:
+
+```sh
+npm run verify        # type-check, lint, build, check paths and loading
+npm pack --dry-run    # list exactly what would be published
+```
+
+## Package Scripts
+
+| Script                 | What it does                                                                                                                                     |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `build`                | Clean `dist/` and build the configured formats into `dist/cjs`, `dist/es`, `dist/@types/{cjs,es}`                                                |
+| `dev`                  | The same build, in watch mode                                                                                                                    |
+| `test`                 | Run the test suite once                                                                                                                          |
+| `test-watch`           | Run tests in watch mode                                                                                                                          |
+| `test-coverage`        | Run tests and write a coverage report to `coverage_report/`                                                                                      |
+| `test-coverage-watch`  | Coverage, in watch mode                                                                                                                          |
+| `check-types`          | Type-check without emitting files                                                                                                                |
+| `lint`                 | Run code quality checks over the repository                                                                                                      |
+| `format`               | Format the repository with Prettier                                                                                                              |
+| `docs`                 | Generate API documentation into `code_documentation/`                                                                                            |
+| `check-updates`        | Report outdated dependencies                                                                                                                     |
+| `check-declared-paths` | Check that declared paths — `exports`, `main`, `module`, `types`, `source` — exist, `main`/`module`/`types`/`exports` in the right module system |
+| `check-dist-loads`     | Load the built `dist/cjs` and `dist/es` barrels on the current Node — proves they import cleanly, which the path check does not                  |
+| `verify`               | Build and structural checks in one command: `check-types` → `lint` → `build` → `check-declared-paths` → `check-dist-loads`                       |
+| `prepack`              | Install and build before packing — runs automatically on `npm pack` and `npm publish`                                                            |
+| `clear`                | Remove generated directories: `build/` <sup>**(\*)**</sup>, `code_documentation/`, `coverage_report/`, `dist/`                                   |
+| `reset`                | `clear`, plus `node_modules/`                                                                                                                    |
+| `reset-hard`           | `reset`, plus every lockfile <sup>**(\*\*)**</sup>                                                                                               |
+
+<sup>**(\*)**</sup> _`build/` is the scratch output directory for a bare `tsc` run, separate from the final build artifacts in `dist/`._
+
+<sup>**(\*\*)**</sup> _Safe while the lockfiles are untracked, as they are in this template. Once you commit yours (see [First Steps](#first-steps-after-using-the-template)), prefer plain `reset` in your checkout._
+
+The `scripts/` directory holds the three commands the template implements itself — [`clear.cjs`](scripts/clear.cjs), [`check-declared-paths.cjs`](scripts/check-declared-paths.cjs) and [`check-dist-loads.cjs`](scripts/check-dist-loads.cjs). Plain Node, no dependency of their own.
+
+## Configuration Files
+
+| File                             | Purpose                                                                                                                                    |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `package.json`                   | Project metadata, dependencies, scripts and the `exports` map. See [npm docs](https://docs.npmjs.com/cli/v10/configuring-npm/package-json) |
+| `tsconfig.json`                  | TypeScript compiler settings for type checking and builds. See [TSConfig docs](https://www.typescriptlang.org/tsconfig)                    |
+| `rollup.config.mjs`              | Build configuration — generates the CommonJS/ESM/Types outputs. See [Rollup docs](https://rollupjs.org/configuration-options)              |
+| `jest.config.cjs`                | Test runner setup with TypeScript support. See [Jest docs](https://jestjs.io/docs/configuration)                                           |
+| `.prettierrc`, `.prettierignore` | Formatting rules and the paths excluded from them. See [Prettier docs](https://prettier.io/docs/en/configuration)                          |
+| `.gitignore`                     | Version control ignore patterns. See [gitignore docs](https://git-scm.com/docs/gitignore)                                                  |
 
 ## Issues and Support
 
-If you encounter any issues or have questions, please open an issue on the [GitHub Issue Tracker](https://github.com/styiannis/tmplt-ts-package/issues).
+If you encounter any issues or have questions, please open an issue on the [GitHub Issue Tracker](https://github.com/styiannis/ts-package-template/issues).
 
 ## License
 
-This project is licensed under the [MIT License](https://github.com/styiannis/tmplt-ts-package?tab=MIT-1-ov-file#readme).
+This project is licensed under the [MIT License](https://github.com/styiannis/ts-package-template?tab=MIT-1-ov-file#readme).
