@@ -21,10 +21,11 @@
   "bugs": {
     "url": "https://github.com/styiannis/ts-package-template/issues"
   },
+  "type": "commonjs",
   "source": "src/index.ts",
-  "main": "dist/cjs/index.js",
-  "module": "dist/es/index.js",
-  "types": "dist/@types/index.d.ts",
+  "main": "dist/cjs/index.cjs",
+  "module": "dist/es/index.mjs",
+  "types": "dist/@types/cjs/index.d.cts",
   "files": [
     "dist"
   ],
@@ -50,7 +51,7 @@
     "clear": "node ./scripts/clear.cjs ./build ./code_documentation ./coverage_report ./dist",
     "docs": "node ./scripts/clear.cjs ./code_documentation && typedoc --basePath ./ --entryPoints src/index.ts --entryPointStrategy Expand --readme none --includeVersion --out code_documentation",
     "format": "prettier -w ./",
-    "lint": "oxlint --deny-warnings src scripts",
+    "lint": "oxlint --deny-warnings ./",
     "prepack": "npm i && npm run build",
     "reset": "npm run clear && node ./scripts/clear.cjs ./node_modules",
     "reset-hard": "npm run reset && node ./scripts/clear.cjs ./package-lock.json ./yarn.lock ./pnpm-lock.yaml",
@@ -77,82 +78,82 @@
   "exports": {
     ".": {
       "import": {
-        "types": "./dist/@types/index.d.ts",
-        "default": "./dist/es/index.js"
+        "types": "./dist/@types/es/index.d.mts",
+        "default": "./dist/es/index.mjs"
       },
       "require": {
-        "types": "./dist/@types/index.d.ts",
-        "default": "./dist/cjs/index.js"
+        "types": "./dist/@types/cjs/index.d.cts",
+        "default": "./dist/cjs/index.cjs"
       }
     },
     "./module-a": {
       "import": {
-        "types": "./dist/@types/module-a/index.d.ts",
-        "default": "./dist/es/module-a/index.js"
+        "types": "./dist/@types/es/module-a/index.d.mts",
+        "default": "./dist/es/module-a/index.mjs"
       },
       "require": {
-        "types": "./dist/@types/module-a/index.d.ts",
-        "default": "./dist/cjs/module-a/index.js"
+        "types": "./dist/@types/cjs/module-a/index.d.cts",
+        "default": "./dist/cjs/module-a/index.cjs"
       }
     },
     "./submodule-a1": {
       "import": {
-        "types": "./dist/@types/module-a/submodule-a1.d.ts",
-        "default": "./dist/es/module-a/submodule-a1.js"
+        "types": "./dist/@types/es/module-a/submodule-a1.d.mts",
+        "default": "./dist/es/module-a/submodule-a1.mjs"
       },
       "require": {
-        "types": "./dist/@types/module-a/submodule-a1.d.ts",
-        "default": "./dist/cjs/module-a/submodule-a1.js"
+        "types": "./dist/@types/cjs/module-a/submodule-a1.d.cts",
+        "default": "./dist/cjs/module-a/submodule-a1.cjs"
       }
     },
     "./submodule-a2": {
       "import": {
-        "types": "./dist/@types/module-a/submodule-a2.d.ts",
-        "default": "./dist/es/module-a/submodule-a2.js"
+        "types": "./dist/@types/es/module-a/submodule-a2.d.mts",
+        "default": "./dist/es/module-a/submodule-a2.mjs"
       },
       "require": {
-        "types": "./dist/@types/module-a/submodule-a2.d.ts",
-        "default": "./dist/cjs/module-a/submodule-a2.js"
+        "types": "./dist/@types/cjs/module-a/submodule-a2.d.cts",
+        "default": "./dist/cjs/module-a/submodule-a2.cjs"
       }
     },
     "./submodule-a3": {
       "import": {
-        "types": "./dist/@types/module-a/submodule-a3.d.ts",
-        "default": "./dist/es/module-a/submodule-a3.js"
+        "types": "./dist/@types/es/module-a/submodule-a3.d.mts",
+        "default": "./dist/es/module-a/submodule-a3.mjs"
       },
       "require": {
-        "types": "./dist/@types/module-a/submodule-a3.d.ts",
-        "default": "./dist/cjs/module-a/submodule-a3.js"
+        "types": "./dist/@types/cjs/module-a/submodule-a3.d.cts",
+        "default": "./dist/cjs/module-a/submodule-a3.cjs"
       }
     },
     "./submodule-b1": {
       "import": {
-        "types": "./dist/@types/module-b/submodule-b1.d.ts",
-        "default": "./dist/es/module-b/submodule-b1.js"
+        "types": "./dist/@types/es/module-b/submodule-b1.d.mts",
+        "default": "./dist/es/module-b/submodule-b1.mjs"
       },
       "require": {
-        "types": "./dist/@types/module-b/submodule-b1.d.ts",
-        "default": "./dist/cjs/module-b/submodule-b1.js"
+        "types": "./dist/@types/cjs/module-b/submodule-b1.d.cts",
+        "default": "./dist/cjs/module-b/submodule-b1.cjs"
       }
     },
     "./submodule-b2": {
       "import": {
-        "types": "./dist/@types/module-b/submodule-b2.d.ts",
-        "default": "./dist/es/module-b/submodule-b2.js"
+        "types": "./dist/@types/es/module-b/submodule-b2.d.mts",
+        "default": "./dist/es/module-b/submodule-b2.mjs"
       },
       "require": {
-        "types": "./dist/@types/module-b/submodule-b2.d.ts",
-        "default": "./dist/cjs/module-b/submodule-b2.js"
+        "types": "./dist/@types/cjs/module-b/submodule-b2.d.cts",
+        "default": "./dist/cjs/module-b/submodule-b2.cjs"
       }
     },
     "./submodule-b3": {
       "import": {
-        "types": "./dist/@types/module-b/submodule-b3.d.ts",
-        "default": "./dist/es/module-b/submodule-b3.js"
+        "types": "./dist/@types/es/module-b/submodule-b3.d.mts",
+        "default": "./dist/es/module-b/submodule-b3.mjs"
       },
       "require": {
-        "types": "./dist/@types/module-b/submodule-b3.d.ts",
-        "default": "./dist/cjs/module-b/submodule-b3.js"
+        "types": "./dist/@types/cjs/module-b/submodule-b3.d.cts",
+        "default": "./dist/cjs/module-b/submodule-b3.cjs"
       }
     }
   }
