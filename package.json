@@ -88,74 +88,74 @@
         "default": "./dist/cjs/index.cjs"
       }
     },
-    "./module-a": {
+    "./shapes": {
       "import": {
-        "types": "./dist/@types/es/module-a/index.d.mts",
-        "default": "./dist/es/module-a/index.mjs"
+        "types": "./dist/@types/es/shapes/index.d.mts",
+        "default": "./dist/es/shapes/index.mjs"
       },
       "require": {
-        "types": "./dist/@types/cjs/module-a/index.d.cts",
-        "default": "./dist/cjs/module-a/index.cjs"
+        "types": "./dist/@types/cjs/shapes/index.d.cts",
+        "default": "./dist/cjs/shapes/index.cjs"
       }
     },
-    "./submodule-a1": {
+    "./circle": {
       "import": {
-        "types": "./dist/@types/es/module-a/submodule-a1.d.mts",
-        "default": "./dist/es/module-a/submodule-a1.mjs"
+        "types": "./dist/@types/es/shapes/circle.d.mts",
+        "default": "./dist/es/shapes/circle.mjs"
       },
       "require": {
-        "types": "./dist/@types/cjs/module-a/submodule-a1.d.cts",
-        "default": "./dist/cjs/module-a/submodule-a1.cjs"
+        "types": "./dist/@types/cjs/shapes/circle.d.cts",
+        "default": "./dist/cjs/shapes/circle.cjs"
       }
     },
-    "./submodule-a2": {
+    "./square": {
       "import": {
-        "types": "./dist/@types/es/module-a/submodule-a2.d.mts",
-        "default": "./dist/es/module-a/submodule-a2.mjs"
+        "types": "./dist/@types/es/shapes/square.d.mts",
+        "default": "./dist/es/shapes/square.mjs"
       },
       "require": {
-        "types": "./dist/@types/cjs/module-a/submodule-a2.d.cts",
-        "default": "./dist/cjs/module-a/submodule-a2.cjs"
+        "types": "./dist/@types/cjs/shapes/square.d.cts",
+        "default": "./dist/cjs/shapes/square.cjs"
       }
     },
-    "./submodule-a3": {
+    "./triangle": {
       "import": {
-        "types": "./dist/@types/es/module-a/submodule-a3.d.mts",
-        "default": "./dist/es/module-a/submodule-a3.mjs"
+        "types": "./dist/@types/es/shapes/triangle.d.mts",
+        "default": "./dist/es/shapes/triangle.mjs"
       },
       "require": {
-        "types": "./dist/@types/cjs/module-a/submodule-a3.d.cts",
-        "default": "./dist/cjs/module-a/submodule-a3.cjs"
+        "types": "./dist/@types/cjs/shapes/triangle.d.cts",
+        "default": "./dist/cjs/shapes/triangle.cjs"
       }
     },
-    "./submodule-b1": {
+    "./degrees": {
       "import": {
-        "types": "./dist/@types/es/module-b/submodule-b1.d.mts",
-        "default": "./dist/es/module-b/submodule-b1.mjs"
+        "types": "./dist/@types/es/angles/degrees.d.mts",
+        "default": "./dist/es/angles/degrees.mjs"
       },
       "require": {
-        "types": "./dist/@types/cjs/module-b/submodule-b1.d.cts",
-        "default": "./dist/cjs/module-b/submodule-b1.cjs"
+        "types": "./dist/@types/cjs/angles/degrees.d.cts",
+        "default": "./dist/cjs/angles/degrees.cjs"
       }
     },
-    "./submodule-b2": {
+    "./radians": {
       "import": {
-        "types": "./dist/@types/es/module-b/submodule-b2.d.mts",
-        "default": "./dist/es/module-b/submodule-b2.mjs"
+        "types": "./dist/@types/es/angles/radians.d.mts",
+        "default": "./dist/es/angles/radians.mjs"
       },
       "require": {
-        "types": "./dist/@types/cjs/module-b/submodule-b2.d.cts",
-        "default": "./dist/cjs/module-b/submodule-b2.cjs"
+        "types": "./dist/@types/cjs/angles/radians.d.cts",
+        "default": "./dist/cjs/angles/radians.cjs"
       }
     },
-    "./submodule-b3": {
+    "./turns": {
       "import": {
-        "types": "./dist/@types/es/module-b/submodule-b3.d.mts",
-        "default": "./dist/es/module-b/submodule-b3.mjs"
+        "types": "./dist/@types/es/angles/turns.d.mts",
+        "default": "./dist/es/angles/turns.mjs"
       },
       "require": {
-        "types": "./dist/@types/cjs/module-b/submodule-b3.d.cts",
-        "default": "./dist/cjs/module-b/submodule-b3.cjs"
+        "types": "./dist/@types/cjs/angles/turns.d.cts",
+        "default": "./dist/cjs/angles/turns.cjs"
       }
     }
   }

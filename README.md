@@ -8,11 +8,11 @@
 ![Static Badge](https://img.shields.io/badge/Oxlint-ffffff?style=flat-square&logo=oxc)
 ![Static Badge](https://img.shields.io/badge/Prettier-ffffff?style=flat-square&logo=prettier)
 
-A template for publishing TypeScript packages whose **source hierarchy survives into the build** — so consumers can import one deep submodule instead of your whole barrel.
+A template for publishing TypeScript packages whose **source hierarchy survives into the build** — so consumers can import one module instead of your whole barrel.
 
 Zero runtime dependencies. CommonJS, ESM and type declarations from a single source tree.
 
-Your sources on the left, what a consumer installs on the right:
+Part of the template's own demo — sources on the left, what a consumer installs on the right:
 
 ```
 src/                  dist/es/             dist/cjs/            dist/@types/es/      dist/@types/cjs/
@@ -27,13 +27,15 @@ The extension alone settles the module system — `.mjs`/`.d.mts` is ESM, `.cjs`
 Every emitted module keeps its path, so each one can be its own entry point:
 
 ```ts
-import { hello } from 'my-package'; // the barrel
-import { Circle } from 'my-package/shapes/circle'; // one module, nothing else
+import { area } from 'my-package'; // the barrel
+import { circle } from 'my-package/circle'; // one module, nothing else
 ```
 
 ```js
-const { Circle } = require('my-package/shapes/circle'); // same subpath, CommonJS
+const { circle } = require('my-package/circle'); // same subpath, CommonJS
 ```
+
+The subpath is a name you pick, not the file path — see [Adding a public module](#adding-a-public-module).
 
 Declared entry points are **checked, not assumed**: `npm run verify` builds, then confirms every path `package.json` promises landed in `dist/` — and that what landed actually loads.
 
@@ -69,15 +71,15 @@ A green `verify` means it type-checks, lints, builds, and every declared entry p
 
 ### First Steps After Using the Template
 
-Everything under `src/` and `tests/` is placeholder demo code, named `module-a`/`module-b` rather than the illustrative `shapes/` of the diagram above. To make the template yours:
+Everything under `src/` and `tests/` is placeholder demo code: the `shapes/` of the diagram above, and `angles/` beside it. To make the template yours:
 
-1. **Delete the demo code** — `src/module-a/`, `src/module-b/` and the three files in `tests/`. Write your own modules and re-export them from `src/index.ts`.
+1. **Delete the demo code** — `src/shapes/`, `src/angles/` and the two files in `tests/`. Write your own modules and re-export them from `src/index.ts`.
 2. **Replace the `exports` map** — the 8 demo entries in `package.json` describe the demo modules. See [Adding a public module](#adding-a-public-module).
 3. **Update the metadata** — `name`, `version`, `description`, `keywords`, `author`, `license`, plus `repository` and `bugs` so they point at your own repository and issue tracker. Replace the copyright line in `LICENSE` too.
 4. **Commit your lockfile** — the template gitignores `package-lock.json`, `yarn.lock` and `pnpm-lock.yaml` so no derived project inherits a foreign dependency tree or package manager choice. Your project is not a template: remove your package manager's lockfile from `.gitignore`, run `npm install`, and commit the result so your builds are reproducible.
 5. **Rewrite this README** to describe your package.
 
-> **Two demo modules are `.js` on purpose** — [`submodule-a3.js`](src/module-a/submodule-a3.js) and [`submodule-b2.js`](src/module-b/submodule-b2.js), the mixed-source build made concrete. Worth a look before step 1 removes them. The support is configuration rather than demo code: `allowJs` in `tsconfig.json` and the `js-with-ts` preset in `jest.config.cjs`, neither touched by that step.
+> **Two demo modules are `.js` on purpose** — [`triangle.js`](src/shapes/triangle.js) and [`radians.js`](src/angles/radians.js), the mixed-source build made concrete. Worth a look before step 1 removes them. The support is configuration rather than demo code: `allowJs` in `tsconfig.json` and the `js-with-ts` preset in `jest.config.cjs`, neither touched by that step.
 
 ## Adding a Public Module
 
@@ -104,9 +106,9 @@ Every publicly importable module is declared by hand in the `exports` map of `pa
 
 **3.** Run `npm run build && npm run check-declared-paths`.
 
-> **The subpath is a name you choose, not the file path.** The demo map deliberately flattens: `./submodule-a1` resolves to `dist/*/module-a/submodule-a1.{mjs,cjs}`. Consumers type the subpath, so pick what reads well and keep the three paths inside the block consistent with the actual file location.
+> **The subpath is a name you choose, not the file path.** The demo map deliberately flattens: `./circle` resolves to `dist/*/shapes/circle.{mjs,cjs}`. Consumers type the subpath, so pick what reads well and keep the three paths inside the block consistent with the actual file location.
 
-> **A module that only re-exports other modules gets no file of its own**, so it cannot be an entry point — the build drops modules that contribute nothing themselves. That is why the demo map declares `./module-a` but not `./module-b`, whose `index.ts` is pure re-exports. Its submodules are declared instead: `./submodule-b1` to `./submodule-b3`.
+> **A module that only re-exports other modules gets no file of its own**, so it cannot be an entry point — the build drops modules that contribute nothing themselves. That is why the demo map declares `./shapes`, whose `index.ts` composes `area`, but not `./angles`, whose `index.ts` is pure re-exports. Its modules are declared instead: `./degrees`, `./radians` and `./turns`. `src/index.ts` is the exception: as the build's input it is always emitted, re-exports or not.
 
 [`check-declared-paths`](scripts/check-declared-paths.cjs) reads the map you just edited and checks that every path it names exists in `dist/`, catching the mistake this map invites: an entry pointing at a file the build never produced — a typo, a renamed source file, a module the build dropped, or a subpath added before the module behind it. It checks the legacy `main`, `module` and `types` fields the same way. It also checks one thing existence cannot catch — that each path names the right _kind_ of file for the condition enclosing it:
 
