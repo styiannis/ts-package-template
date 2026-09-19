@@ -24,15 +24,15 @@ src/                  dist/es/             dist/cjs/            dist/@types/es/ 
 
 The extension alone settles the module system — `.mjs`/`.d.mts` is ESM, `.cjs`/`.d.cts` is CommonJS — so nothing in `dist/` needs its own `package.json` to say so.
 
-Every emitted module keeps its path, so every module can be its own entry point:
+Every emitted module keeps its path, so each one can be its own entry point:
 
 ```ts
 import { hello } from 'my-package'; // the barrel
-import { Circle } from 'my-package/circle'; // one module, nothing else
+import { Circle } from 'my-package/shapes/circle'; // one module, nothing else
 ```
 
 ```js
-const { Circle } = require('my-package/circle'); // same subpath, CommonJS
+const { Circle } = require('my-package/shapes/circle'); // same subpath, CommonJS
 ```
 
 Declared entry points are **checked, not assumed**: `npm run verify` builds, then confirms every path `package.json` promises landed in `dist/` — and that what landed actually loads.
@@ -43,7 +43,7 @@ Mixed `.ts`/`.js` sources build, type-check and test side by side, so a JavaScri
 
 Plumbing, not policy: no git hooks, no commit-message rules, no CI that blocks a push. The linter and formatter ship with defaults, not opinions you are expected to keep. A fresh clone needs Node and npm and nothing else.
 
-What it does enforce is narrow and mechanical: every entry point your package declares has to exist in the build, in the right module format, and load on the Node versions you claim to support. Those checks and the workflow around them are described below — few, but they hold. The cost is honest: no safety net, and nothing runs unless you run it.
+What it does enforce is narrow and mechanical: every entry point your package declares has to exist in the build, in the right module format, and load on the Node versions you claim to support. Those checks and the workflow around them are described below. The cost: no safety net — nothing runs unless you run it.
 
 ## System Requirements
 
@@ -77,7 +77,7 @@ Everything under `src/` and `tests/` is placeholder demo code, named `module-a`/
 4. **Commit your lockfile** — the template gitignores `package-lock.json`, `yarn.lock` and `pnpm-lock.yaml` so no derived project inherits a foreign dependency tree or package manager choice. Your project is not a template: remove your package manager's lockfile from `.gitignore`, run `npm install`, and commit the result so your builds are reproducible.
 5. **Rewrite this README** to describe your package.
 
-> **Two demo modules are `.js` on purpose** — the mixed-source build, made concrete; worth a look before step 1 removes them. The support is configuration rather than demo code: `allowJs` in `tsconfig.json` and the `js-with-ts` preset in `jest.config.cjs`, neither touched by that step.
+> **Two demo modules are `.js` on purpose** — [`submodule-a3.js`](src/module-a/submodule-a3.js) and [`submodule-b2.js`](src/module-b/submodule-b2.js), the mixed-source build made concrete. Worth a look before step 1 removes them. The support is configuration rather than demo code: `allowJs` in `tsconfig.json` and the `js-with-ts` preset in `jest.config.cjs`, neither touched by that step.
 
 ## Adding a Public Module
 
@@ -106,11 +106,18 @@ Every publicly importable module is declared by hand in the `exports` map of `pa
 
 > **The subpath is a name you choose, not the file path.** The demo map deliberately flattens: `./submodule-a1` resolves to `dist/*/module-a/submodule-a1.{mjs,cjs}`. Consumers type the subpath, so pick what reads well and keep the three paths inside the block consistent with the actual file location.
 
-> **A module that only re-exports other modules gets no file of its own**, so it cannot be an entry point — the build drops modules that contribute nothing themselves. That is why the demo map declares `./module-a` but not `./module-b`, whose `index.ts` is pure re-exports.
+> **A module that only re-exports other modules gets no file of its own**, so it cannot be an entry point — the build drops modules that contribute nothing themselves. That is why the demo map declares `./module-a` but not `./module-b`, whose `index.ts` is pure re-exports. Its submodules are declared instead: `./submodule-b1` to `./submodule-b3`.
 
-[`check-declared-paths`](scripts/check-declared-paths.cjs) reads the map you just edited and checks that every path it names exists in `dist/`, catching the mistake this map invites: an entry pointing at a file the build never produced — a typo, a renamed source file, a module the build dropped, or a subpath added before the module behind it. It checks the legacy `main`, `module` and `types` fields the same way, plus one thing existence cannot catch: that each path names the right _kind_ of file for the condition enclosing it — `main` and the legacy `types` the format your package declares, `module` an ESM file, every `import` condition (including its `types` leaf) an ESM/`.mjs`/`.d.mts` file, every `require` condition (including its `types` leaf) a CommonJS/`.cjs`/`.d.cts` file. Modern Node resolves through `exports` and ignores the legacy fields, so a broken one stays invisible until it reaches a consumer who does not: an older bundler, or TypeScript on `moduleResolution: "node"`. It also checks `source` exists, for tooling that resolves straight to pre-build TypeScript instead of `dist/`.
+[`check-declared-paths`](scripts/check-declared-paths.cjs) reads the map you just edited and checks that every path it names exists in `dist/`, catching the mistake this map invites: an entry pointing at a file the build never produced — a typo, a renamed source file, a module the build dropped, or a subpath added before the module behind it. It checks the legacy `main`, `module` and `types` fields the same way. It also checks one thing existence cannot catch — that each path names the right _kind_ of file for the condition enclosing it:
 
-It is a **path check** — it confirms the files are there, not that they import cleanly. That is [`check-dist-loads`](scripts/check-dist-loads.cjs), which loads the built barrels on whichever Node runs it. `verify` runs both; CI repeats the load check at each end of the `engines` range.
+- `main` and the legacy `types` — the format your package declares
+- `module` — an ESM file
+- every `import` condition, including its `types` leaf — an ESM file (`.mjs`/`.d.mts`)
+- every `require` condition, including its `types` leaf — a CommonJS file (`.cjs`/`.d.cts`)
+
+Modern Node resolves through `exports` and ignores the legacy fields, so a broken one stays invisible until it reaches a consumer that still reads them: an older bundler, or TypeScript on `moduleResolution: "node"`. `source` is checked for existence too, for tooling that resolves straight to pre-build TypeScript instead of `dist/`.
+
+It is a **path check** — it confirms the files are there, not that they import cleanly. Importing is checked by [`check-dist-loads`](scripts/check-dist-loads.cjs), which loads the built barrels on whichever Node runs it. `verify` runs both; CI repeats the load check on the lowest Node that `engines` allows and on a newer one.
 
 ## Building Only One Format
 
@@ -133,7 +140,7 @@ Dropping a format is dropping a name from that array. An environment variable wa
 | `module` | `dist/es`         | `es`                   |
 | `types`  | `dist/@types/cjs` | `cjs`                  |
 
-> **Delete the field — do not repoint it.** For an ESM-only package, `main: "dist/es/index.mjs"` looks like the obvious fix and is a trap: `main` is what resolvers that ignore `exports` follow, and a resolver that treats `.mjs` as ESM already exists but many that predate it do not, loading it as CommonJS and throwing `ERR_REQUIRE_ESM`. An ESM-only package has no `main` — `module` and `exports` are its entry points.
+> **Delete the field — do not repoint it.** For an ESM-only package, `main: "dist/es/index.mjs"` looks like the obvious fix and is a trap: `main` is what resolvers that ignore `exports` follow. Some of them treat `.mjs` as ESM; many older ones do not, load it as CommonJS and throw `ERR_REQUIRE_ESM`. An ESM-only package has no `main` — `module` and `exports` are its entry points.
 
 ## Testing
 
@@ -146,11 +153,11 @@ Jest runs through `ts-jest`, so a test file may be `.ts` or `.js` and import eit
 The **Verify** workflow ([.github/workflows/verify.yml](.github/workflows/verify.yml)) is a single job that switches Node versions between steps:
 
 - **Node 22** — installs dependencies, runs `npm run verify`, then `npm run test-coverage`.
-- **Node 18** and **Node 24** — the ends of the `engines` range. Switching Node does not rebuild: each runs [`check-dist-loads`](scripts/check-dist-loads.cjs) against the same `dist/` built above — `dist/cjs/index.cjs` with `require()`, `dist/es/index.mjs` with `import()`, plus a presence check on `dist/@types/es/index.d.mts` and `dist/@types/cjs/index.d.cts`.
+- **Node 18.12.0** and **Node 24** — the lowest version `engines` allows, and a newer one, since `engines` sets no upper bound. Switching Node does not rebuild: each runs [`check-dist-loads`](scripts/check-dist-loads.cjs) against the same `dist/` built above — `dist/cjs/index.cjs` with `require()`, `dist/es/index.mjs` with `import()`.
 
-Loading the barrel parses and executes every emitted module, and `verify` already ran the same check on Node 22, so the build is exercised across the whole `engines` range: a syntax level or runtime API your build emits but Node 18 does not accept fails here.
+Loading the barrel parses and executes every module it reaches. With `verify` having run the same check on Node 22, the build is exercised from the floor of the `engines` range upwards: a syntax level or runtime API your build emits but Node 18 does not accept fails here.
 
-The script needs no configuration — it loads whatever is in `dist/`, so a pruned build is checked as it stands. A pruned format leaves no directory and is skipped; a directory that exists but holds no entry file is a build that broke partway, and fails. A barrel that loads but exports nothing — the usual state right after deleting the demo code — is only a warning.
+The script needs no configuration — it loads whatever is in `dist/`, so a pruned build is checked as it stands. A format whose entry file is missing is skipped. Whether that is a pruned format or a build that broke partway is for `check-declared-paths` to decide: it fails on any entry the manifest still declares. A barrel that loads but exports nothing — the usual state right after deleting the demo code — is only a warning.
 
 The workflow is **manual-dispatch only** — start it from the "_Actions_" tab. Pushes and pull requests do not trigger it, so run `npm run verify` locally before committing.
 
@@ -179,26 +186,26 @@ npm pack --dry-run    # list exactly what would be published
 
 ## Package Scripts
 
-| Script                 | What it does                                                                                                                                     |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `build`                | Clean `dist/` and build the configured formats into `dist/cjs`, `dist/es`, `dist/@types/{cjs,es}`                                                |
-| `dev`                  | The same build, in watch mode                                                                                                                    |
-| `test`                 | Run the test suite once                                                                                                                          |
-| `test-watch`           | Run tests in watch mode                                                                                                                          |
-| `test-coverage`        | Run tests and write a coverage report to `coverage_report/`                                                                                      |
-| `test-coverage-watch`  | Coverage, in watch mode                                                                                                                          |
-| `check-types`          | Type-check without emitting files                                                                                                                |
-| `lint`                 | Run code quality checks over the repository                                                                                                      |
-| `format`               | Format the repository with Prettier                                                                                                              |
-| `docs`                 | Generate API documentation into `code_documentation/`                                                                                            |
-| `check-updates`        | Report outdated dependencies                                                                                                                     |
-| `check-declared-paths` | Check that declared paths — `exports`, `main`, `module`, `types`, `source` — exist, `main`/`module`/`types`/`exports` in the right module system |
-| `check-dist-loads`     | Load the built `dist/cjs` and `dist/es` barrels on the current Node — proves they import cleanly, which the path check does not                  |
-| `verify`               | Build and structural checks in one command: `check-types` → `lint` → `build` → `check-declared-paths` → `check-dist-loads`                       |
-| `prepack`              | Install and build before packing — runs automatically on `npm pack` and `npm publish`                                                            |
-| `clear`                | Remove generated directories: `build/` <sup>**(\*)**</sup>, `code_documentation/`, `coverage_report/`, `dist/`                                   |
-| `reset`                | `clear`, plus `node_modules/`                                                                                                                    |
-| `reset-hard`           | `reset`, plus every lockfile <sup>**(\*\*)**</sup>                                                                                               |
+| Script                 | What it does                                                                                                                                                          |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `build`                | Clean `dist/` and build the configured formats into `dist/cjs`, `dist/es`, `dist/@types/{cjs,es}`                                                                     |
+| `dev`                  | The same build, in watch mode                                                                                                                                         |
+| `test`                 | Run the test suite once                                                                                                                                               |
+| `test-watch`           | Run tests in watch mode                                                                                                                                               |
+| `test-coverage`        | Run tests and write a coverage report to `coverage_report/`                                                                                                           |
+| `test-coverage-watch`  | Coverage, in watch mode                                                                                                                                               |
+| `check-types`          | Type-check without emitting files                                                                                                                                     |
+| `lint`                 | Run code quality checks over the repository                                                                                                                           |
+| `format`               | Format the repository with Prettier                                                                                                                                   |
+| `docs`                 | Generate API documentation into `code_documentation/`                                                                                                                 |
+| `check-updates`        | Report outdated dependencies                                                                                                                                          |
+| `check-declared-paths` | Check that every declared path (`exports`, `main`, `module`, `types`, `source`) exists, and that `exports`, `main`, `module` and `types` name the right module system |
+| `check-dist-loads`     | Load the built `dist/cjs` and `dist/es` barrels on the current Node — proves they import cleanly, which the path check does not                                       |
+| `verify`               | Build and structural checks in one command: `check-types` → `lint` → `build` → `check-declared-paths` → `check-dist-loads`                                            |
+| `prepack`              | Install and build before packing — runs automatically on `npm pack` and `npm publish`                                                                                 |
+| `clear`                | Remove generated directories: `build/` <sup>**(\*)**</sup>, `code_documentation/`, `coverage_report/`, `dist/`                                                        |
+| `reset`                | `clear`, plus `node_modules/`                                                                                                                                         |
+| `reset-hard`           | `reset`, plus every lockfile <sup>**(\*\*)**</sup>                                                                                                                    |
 
 <sup>**(\*)**</sup> _`build/` is the scratch output directory for a bare `tsc` run, separate from the final build artifacts in `dist/`._
 

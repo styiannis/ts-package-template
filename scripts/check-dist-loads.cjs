@@ -1,7 +1,7 @@
 // Loads dist/cjs via require() and dist/es via import() on whichever Node
-// version invokes it. The barrel re-exports the whole graph, so loading it
-// parses every module. Scoped to dist/ only, no config or "exports" map: only
-// built formats load, so pruning a format needs no edit here.
+// version invokes it. Loading the barrel parses every module it reaches.
+// Scoped to dist/ only, no config or "exports" map: only built formats load,
+// so pruning a format needs no edit here.
 
 const { existsSync } = require('node:fs');
 const { join } = require('node:path');
