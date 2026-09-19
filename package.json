@@ -1,18 +1,16 @@
 {
   "name": "ts-package-template",
   "version": "1.2.0",
-  "description": "A TypeScript package template with per-module entry points and declared exports verified against the actual build output",
+  "description": "A TypeScript package template with per-module entry points and declared exports verified against the actual build output.",
   "keywords": [
-    "boilerplate",
+    "typescript-template",
+    "package-template",
+    "typescript-boilerplate",
+    "template",
+    "esm",
     "commonjs",
     "dual-package",
-    "esm",
-    "package-template",
-    "rollup",
-    "subpath-exports",
-    "template",
-    "tree-shaking",
-    "typescript"
+    "rollup"
   ],
   "author": "Yiannis Stergiou <hello@styiannis.dev>",
   "license": "MIT",

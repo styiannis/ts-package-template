@@ -15,11 +15,12 @@ Zero runtime dependencies. CommonJS, ESM and type declarations from a single sou
 Part of the template's own demo — sources on the left, what a consumer installs on the right:
 
 ```
-src/                  dist/es/             dist/cjs/            dist/@types/es/      dist/@types/cjs/
-├── index.ts       →  ├── index.mjs        ├── index.cjs        ├── index.d.mts      ├── index.d.cts
-└── shapes/           └── shapes/          └── shapes/          └── shapes/          └── shapes/
-    ├── index.ts          ├── index.mjs        ├── index.cjs        ├── index.d.mts      ├── index.d.cts
-    └── circle.ts         └── circle.mjs       └── circle.cjs       └── circle.d.mts      └── circle.d.cts
+src/                  dist/es/                dist/cjs/               dist/@types/es/         dist/@types/cjs/
+├── index.ts       →  ├── index.mjs           ├── index.cjs           ├── index.d.mts         ├── index.d.cts
+└── shapes/           └── shapes/             └── shapes/             └── shapes/             └── shapes/
+    ├── index.ts          ├── index.mjs           ├── index.cjs           ├── index.d.mts         ├── index.d.cts
+    ├── circle.ts         ├── circle.mjs          ├── circle.cjs          ├── circle.d.mts        ├── circle.d.cts
+    └── triangle.js       └── triangle.mjs        └── triangle.cjs        └── triangle.d.mts      └── triangle.d.cts
 ```
 
 The extension alone settles the module system — `.mjs`/`.d.mts` is ESM, `.cjs`/`.d.cts` is CommonJS — so nothing in `dist/` needs its own `package.json` to say so.
@@ -35,7 +36,7 @@ import { circle } from 'my-package/circle'; // one module, nothing else
 const { circle } = require('my-package/circle'); // same subpath, CommonJS
 ```
 
-The subpath is a name you pick, not the file path — see [Adding a public module](#adding-a-public-module).
+The subpath is a name you choose, not the file path — see [Adding a public module](#adding-a-public-module).
 
 Declared entry points are **checked, not assumed**: `npm run verify` builds, then confirms every path `package.json` promises landed in `dist/` — and that what landed actually loads.
 
@@ -108,7 +109,7 @@ Every publicly importable module is declared by hand in the `exports` map of `pa
 
 > **The subpath is a name you choose, not the file path.** The demo map deliberately flattens: `./circle` resolves to `dist/*/shapes/circle.{mjs,cjs}`. Consumers type the subpath, so pick what reads well and keep the three paths inside the block consistent with the actual file location.
 
-> **A module that only re-exports other modules gets no file of its own**, so it cannot be an entry point — the build drops modules that contribute nothing themselves. That is why the demo map declares `./shapes`, whose `index.ts` composes `area`, but not `./angles`, whose `index.ts` is pure re-exports. Its modules are declared instead: `./degrees`, `./radians` and `./turns`. `src/index.ts` is the exception: as the build's input it is always emitted, re-exports or not.
+> **A module that only re-exports other modules gets no file of its own**, so it cannot be an entry point — the build drops modules that contribute nothing themselves. That is why the demo map declares `./shapes`, whose `index.ts` composes `area`, but not `./angles`, whose `index.ts` is pure re-exports. The modules under `angles/` are declared instead: `./degrees`, `./radians` and `./turns`. `src/index.ts` is the exception: as the build's input it is always emitted, re-exports or not.
 
 [`check-declared-paths`](scripts/check-declared-paths.cjs) reads the map you just edited and checks that every path it names exists in `dist/`, catching the mistake this map invites: an entry pointing at a file the build never produced — a typo, a renamed source file, a module the build dropped, or a subpath added before the module behind it. It checks the legacy `main`, `module` and `types` fields the same way. It also checks one thing existence cannot catch — that each path names the right _kind_ of file for the condition enclosing it:
 
