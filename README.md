@@ -23,7 +23,7 @@ src/                  dist/es/                dist/cjs/               dist/@type
     └── triangle.js       └── triangle.mjs        └── triangle.cjs        └── triangle.d.mts      └── triangle.d.cts
 ```
 
-The extension alone settles the module system — `.mjs`/`.d.mts` is ESM, `.cjs`/`.d.cts` is CommonJS — so nothing in `dist/` needs its own `package.json` to say so.
+The extension alone settles the module system: `.mjs`/`.d.mts` is ESM, `.cjs`/`.d.cts` is CommonJS. Nothing inside `dist/` needs a `package.json` of its own to declare a format.
 
 Every emitted module keeps its path, so each one can be its own entry point:
 
@@ -44,7 +44,7 @@ Mixed `.ts`/`.js` sources build, type-check and test side by side, so a JavaScri
 
 ## What It Does Not Do
 
-Plumbing, not policy: no git hooks, no commit-message rules, no CI that blocks a push. The linter and formatter ship with defaults, not opinions you are expected to keep. A fresh clone needs Node and npm and nothing else.
+Infrastructure, not policy: no git hooks, no commit-message rules, no CI that blocks a push. The linter and formatter ship with defaults, not opinions you are expected to keep. A fresh clone needs Node and npm and nothing else.
 
 What it does enforce is narrow and mechanical: every entry point your package declares has to exist in the build, in the right module format, and load on the Node versions you claim to support. Those checks and the workflow around them are described below. The cost: no safety net — nothing runs unless you run it.
 
