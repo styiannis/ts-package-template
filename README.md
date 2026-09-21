@@ -180,7 +180,7 @@ Scope `push` narrowly — `[main]` above, not every branch — so you are not pa
 
 `package.json` ships only `dist/` (its `files` field), so the tarball carries the build and nothing else — no sources, no tests, no config. `prepack` runs `npm i && npm run build` automatically, so publishing always packs a fresh build instead of whatever `dist/` happened to hold. That includes `npm pack --dry-run`, which is not a quick look: it reinstalls, clears `dist/` and rebuilds before printing the list.
 
-Before you publish:
+`"private": true` keeps the template itself off the registry. Delete it from `package.json` before your first publish. Then:
 
 ```sh
 npm run verify        # type-check, lint, build, check paths and loading
